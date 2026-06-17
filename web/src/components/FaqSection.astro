@@ -1,0 +1,131 @@
+---
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+interface Props {
+  faq: FaqItem[];
+}
+
+const { faq = [] } = Astro.props;
+---
+
+<div class="faq-container">
+  <h2 class="section-title">Frequently Asked Questions</h2>
+
+  {faq.length === 0 ? (
+    <p class="empty-msg">No questions listed yet.</p>
+  ) : (
+    <div class="faq-accordion-list">
+      {faq.map((item, idx) => (
+        <details class="faq-details" open={idx === 0}>
+          <summary class="faq-summary">
+            <span class="faq-question">{item.question}</span>
+            <span class="faq-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 chevron-icon">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+              </svg>
+            </span>
+          </summary>
+          <div class="faq-answer-content">
+            <p class="faq-answer-text">{item.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
+  )}
+</div>
+
+<style>
+  .faq-container {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-surface);
+  }
+
+  .faq-accordion-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .faq-details {
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background-color: var(--color-bg);
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+
+  .faq-details[open] {
+    border-color: #111111;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .faq-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.5rem;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--color-text);
+    user-select: none;
+    list-style: none; /* Hide standard marker */
+  }
+
+  .faq-summary::-webkit-details-marker {
+    display: none; /* Hide Chrome summary marker */
+  }
+
+  .faq-icon-wrapper {
+    color: var(--color-text-muted);
+    transition: transform 0.25s ease;
+  }
+
+  .faq-details[open] .faq-icon-wrapper {
+    transform: rotate(180deg);
+    color: #111111;
+  }
+
+  .faq-answer-content {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-top: none;
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .faq-answer-text {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  .empty-msg {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

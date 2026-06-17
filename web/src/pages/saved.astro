@@ -1,0 +1,375 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+import { client } from '../lib/sanity';
+import { ALL_CLUSTERS_QUERY } from '../lib/queries';
+
+// Fetch clusters statically to populate footer links
+let clusters = [];
+try {
+  clusters = await client.fetch(ALL_CLUSTERS_QUERY);
+} catch (err) {
+  console.warn("Sanity fetch failed on saved recipes page:", err);
+}
+---
+
+<Layout 
+  title="Saved Recipes" 
+  description="Browse your curated collection of pinned and saved visual recipes."
+>
+  <Header />
+
+  <main class="saved-main">
+    <div class="saved-container">
+      <div class="saved-header-row">
+        <h1 class="saved-title">Your Saved Recipes</h1>
+        <span id="saved-count-label" class="count-label">0 recipes pinned</span>
+      </div>
+
+      <!-- Feed Container -->
+      <div class="saved-masonry-feed" id="saved-feed">
+        <!-- Loader / Initial State -->
+        <div class="loading-state" id="saved-loader">Loading your board...</div>
+      </div>
+      
+      <!-- Empty state (hidden by default) -->
+      <div class="empty-results hidden" id="saved-empty-state">
+        <div class="empty-icon">📌</div>
+        <h2 class="empty-title">Your board is empty</h2>
+        <p class="empty-subtitle">Explore our discovery feed to pin your favorite recipes here.</p>
+        <a href="/" class="explore-btn">Discover Recipes</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Recipe Card Template for dynamic rendering -->
+  <template id="recipe-card-template">
+    <article class="recipe-card group">
+      <!-- Card image container -->
+      <div class="image-container">
+        <a href="" class="image-link">
+          <img src="" alt="" class="card-img" />
+          <!-- Hover Overlay -->
+          <div class="hover-overlay">
+            <span class="view-btn">View Recipe</span>
+            <!-- Pinterest-like red Save button -->
+            <span class="save-btn" data-save-btn>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+              </svg>
+            </span>
+          </div>
+        </a>
+        
+        <!-- Floating Badge on Card -->
+        <a href="" class="category-badge"></a>
+      </div>
+
+      <!-- Content Block -->
+      <div class="card-details">
+        <a href="" class="title-link">
+          <h3 class="card-title"></h3>
+        </a>
+        <p class="card-excerpt"></p>
+        
+        <!-- Badges list -->
+        <div class="card-badges"></div>
+      </div>
+    </article>
+  </template>
+
+  <Footer hubs={clusters} />
+</Layout>
+
+<script>
+  interface RecipeIndexItem {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    badges: string[];
+    intentTags: string[];
+    season: string;
+    parentCluster: string;
+    parentClusterSlug: string;
+    imageUrl: string;
+    cardAspectRatio: 'standard' | 'tall' | 'super-tall';
+    publicationType: 'single' | 'roundup';
+  }
+
+  let recipeIndex: RecipeIndexItem[] = [];
+  const feedContainer = document.getElementById('saved-feed');
+  const loader = document.getElementById('saved-loader');
+  const emptyState = document.getElementById('saved-empty-state');
+  const countLabel = document.getElementById('saved-count-label');
+  const template = document.getElementById('recipe-card-template') as HTMLTemplateElement;
+
+  function getSavedIds(): string[] {
+    return JSON.parse(localStorage.getItem('saved-recipes') || '[]');
+  }
+
+  async function loadSavedBoard() {
+    try {
+      const res = await fetch('/recipes-index.json');
+      recipeIndex = await res.json();
+      renderBoard();
+
+      // Listen for save toggles to update board dynamically
+      document.addEventListener('saved-recipes-changed', ((e: CustomEvent) => {
+        const { recipeId, isSaved } = e.detail;
+        if (!isSaved) {
+          // Remove card with a quick fade-out animation
+          const cardEl = feedContainer?.querySelector(`[data-recipe-id="${recipeId}"]`);
+          if (cardEl) {
+            cardEl.animate([
+              { opacity: 1, transform: 'scale(1)' },
+              { opacity: 0, transform: 'scale(0.92)' }
+            ], {
+              duration: 250,
+              easing: 'ease-out'
+            }).onfinish = () => {
+              cardEl.remove();
+              updateCountLabel();
+              checkEmptyState();
+            };
+          }
+        }
+      }) as EventListener);
+      
+    } catch (err) {
+      if (loader) loader.textContent = 'Error loading your saved board.';
+    }
+  }
+
+  function updateCountLabel() {
+    if (!countLabel) return;
+    const savedIds = getSavedIds();
+    countLabel.textContent = `${savedIds.length} recipe${savedIds.length === 1 ? '' : 's'} pinned`;
+  }
+
+  function checkEmptyState() {
+    const savedIds = getSavedIds();
+    if (savedIds.length === 0) {
+      if (emptyState) emptyState.classList.remove('hidden');
+      if (feedContainer) feedContainer.style.display = 'none';
+    } else {
+      if (emptyState) emptyState.classList.add('hidden');
+      if (feedContainer) feedContainer.style.display = 'block';
+    }
+  }
+
+  function renderBoard() {
+    if (!feedContainer || !template) return;
+
+    const savedIds = getSavedIds();
+    updateCountLabel();
+    checkEmptyState();
+
+    // Clear feed (and remove loader)
+    feedContainer.innerHTML = '';
+
+    const filtered = recipeIndex.filter(recipe => savedIds.includes(recipe.id));
+
+    if (filtered.length === 0) {
+      return;
+    }
+
+    filtered.forEach((recipe) => {
+      const clone = template.content.cloneNode(true) as DocumentFragment;
+
+      const card = clone.querySelector('.recipe-card') as HTMLElement;
+      const imgContainer = clone.querySelector('.image-container') as HTMLElement;
+      const imgLink = clone.querySelector('.image-link') as HTMLAnchorElement;
+      const img = clone.querySelector('.card-img') as HTMLImageElement;
+      const categoryBadge = clone.querySelector('.category-badge') as HTMLAnchorElement;
+      const titleLink = clone.querySelector('.title-link') as HTMLAnchorElement;
+      const title = clone.querySelector('.card-title') as HTMLElement;
+      const excerpt = clone.querySelector('.card-excerpt') as HTMLElement;
+      const badgesContainer = clone.querySelector('.card-badges') as HTMLElement;
+      const saveBtn = clone.querySelector('[data-save-btn]') as HTMLElement;
+
+      // Roundup badge rendering
+      const existingRoundupBadge = imgContainer.querySelector('.roundup-badge');
+      if (existingRoundupBadge) {
+        existingRoundupBadge.remove();
+      }
+      if (recipe.publicationType === 'roundup') {
+        const roundupBadge = document.createElement('span');
+        roundupBadge.className = 'roundup-badge';
+        roundupBadge.textContent = 'Round-Up';
+        imgContainer.appendChild(roundupBadge);
+      }
+
+      card.setAttribute('data-recipe-id', recipe.id);
+
+      const aspectClasses = {
+        standard: 'aspect-[4/3]',
+        tall: 'aspect-[2/3]',
+        'super-tall': 'aspect-[1/2]'
+      };
+
+      const aspectClass = aspectClasses[recipe.cardAspectRatio] || 'aspect-[2/3]';
+      imgContainer.className = `image-container ${aspectClass}`;
+
+      imgLink.href = `/recipe/${recipe.slug}#recipe-card`;
+      imgLink.ariaLabel = `View recipe instructions for ${recipe.title}`;
+      img.src = recipe.imageUrl;
+      img.alt = recipe.title;
+      img.setAttribute('sizes', '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw');
+
+      if (recipe.parentCluster) {
+        categoryBadge.href = `/hub/${recipe.parentClusterSlug}`;
+        categoryBadge.textContent = recipe.parentCluster;
+      } else {
+        categoryBadge.style.display = 'none';
+      }
+
+      titleLink.href = `/recipe/${recipe.slug}`;
+      title.textContent = recipe.title;
+      excerpt.textContent = recipe.excerpt;
+
+      if (recipe.badges && recipe.badges.length > 0) {
+        recipe.badges.slice(0, 2).forEach((badgeText) => {
+          const badgeSpan = document.createElement('span');
+          badgeSpan.className = 'badge';
+          badgeSpan.textContent = badgeText;
+          badgesContainer.appendChild(badgeSpan);
+        });
+      }
+
+      saveBtn.classList.add('saved');
+
+      feedContainer.appendChild(clone);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadSavedBoard);
+</script>
+
+<style>
+  .saved-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    min-height: 70vh;
+  }
+
+  .saved-header-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .saved-header-row {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+  }
+
+  .saved-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
+  }
+
+  .count-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .loading-state {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    padding: 5rem 0;
+  }
+
+  /* Masonry Grid inside Saved page */
+  .saved-masonry-feed {
+    column-count: 2;
+    column-gap: 0.75rem;
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .saved-masonry-feed {
+      column-count: 2;
+      column-gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .saved-masonry-feed {
+      column-count: 3;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .saved-masonry-feed {
+      column-count: 4;
+    }
+  }
+
+  /* Empty state */
+  .empty-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 5rem 1.5rem;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    max-width: 600px;
+    margin: 2rem auto;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .empty-results.hidden {
+    display: none !important;
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .empty-title {
+    font-size: 1.35rem;
+    font-weight: 750;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 1.75rem;
+    max-width: 320px;
+  }
+
+  .explore-btn {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.2s, transform 0.2s;
+  }
+
+  .explore-btn:hover {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-2px);
+  }
+</style>

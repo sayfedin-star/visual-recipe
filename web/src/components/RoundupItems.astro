@@ -1,0 +1,350 @@
+---
+import SanityImage from './SanityImage.astro';
+
+interface Props {
+  items: Array<{
+    recipe?: {
+      _id: string;
+      title: string;
+      slug: string;
+      mainImage: any;
+      excerpt: string;
+      badges?: string[];
+      prepTime?: number;
+      cookTime?: number;
+    };
+    title?: string;
+    description: string;
+    image?: any;
+    externalUrl?: string;
+  }>;
+}
+
+const { items = [] } = Astro.props;
+
+// Helper to extract domain from external URL
+function getDomainName(urlStr?: string) {
+  if (!urlStr) return '';
+  try {
+    const url = new URL(urlStr);
+    return url.hostname.replace('www.', '');
+  } catch {
+    return 'Website';
+  }
+}
+---
+
+<div class="roundup-list">
+  {items.map((item, index) => {
+    const isEven = index % 2 === 0;
+    const itemTitle = item.title || item.recipe?.title || 'Untitled Recipe';
+    const itemImage = item.image || item.recipe?.mainImage;
+    const isExternal = !!item.externalUrl;
+    const targetUrl = isExternal 
+      ? item.externalUrl 
+      : (item.recipe?.slug ? `/recipe/${item.recipe.slug}` : '#');
+    const domainName = isExternal ? getDomainName(item.externalUrl) : '';
+    
+    // Quick metadata for internal recipe
+    const badges = item.recipe?.badges || [];
+    const prepTime = item.recipe?.prepTime;
+    const cookTime = item.recipe?.cookTime;
+
+    return (
+      <article class={`roundup-item ${isEven ? 'even' : 'odd'}`}>
+        <!-- Item Visual Media -->
+        <div class="roundup-media-wrapper">
+          <a href={targetUrl} class="media-link" target={isExternal ? "_blank" : "_self"} rel={isExternal ? "noopener noreferrer" : ""}>
+            {itemImage ? (
+              <SanityImage 
+                src={itemImage} 
+                alt={itemTitle}
+                width={500}
+                height={375}
+                sizes="(min-width: 768px) 45vw, 100vw"
+                class="roundup-image"
+              />
+            ) : (
+              <div class="roundup-image-placeholder">🍳 No Image Available</div>
+            )}
+            
+            {domainName && (
+              <span class="external-domain-label">
+                {domainName}
+              </span>
+            )}
+          </a>
+        </div>
+
+        <!-- Item Content Details -->
+        <div class="roundup-info-wrapper">
+          <div class="roundup-header">
+            <span class="item-number">{(index + 1).toString().padStart(2, '0')}</span>
+            <h3 class="item-title">
+              <a href={targetUrl} target={isExternal ? "_blank" : "_self"} rel={isExternal ? "noopener noreferrer" : ""}>
+                {itemTitle}
+              </a>
+            </h3>
+          </div>
+
+          <!-- Internal recipe quick metadata -->
+          {(prepTime || cookTime || badges.length > 0) && (
+            <div class="item-meta-row">
+              {prepTime !== undefined && cookTime !== undefined && (
+                <span class="meta-time">
+                  ⏱️ {prepTime + cookTime} mins
+                </span>
+              )}
+              {badges.slice(0, 2).map(badge => (
+                <span class="meta-badge">{badge}</span>
+              ))}
+            </div>
+          )}
+
+          <p class="item-description">{item.description}</p>
+
+          <!-- Action Button -->
+          <a 
+            href={targetUrl} 
+            class={`cta-button ${isExternal ? 'external-btn' : 'internal-btn'}`}
+            target={isExternal ? "_blank" : "_self"}
+            rel={isExternal ? "noopener noreferrer" : ""}
+          >
+            {isExternal ? (
+              <>
+                Get Recipe on {domainName}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </>
+            ) : (
+              <>
+                View Full Recipe details &rarr;
+              </>
+            )}
+          </a>
+        </div>
+      </article>
+    );
+  })}
+</div>
+
+<style>
+  .roundup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    margin: 3rem 0;
+  }
+
+  .roundup-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .roundup-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  @media (min-width: 768px) {
+    .roundup-item {
+      flex-direction: row;
+      align-items: center;
+      gap: 3rem;
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      border-radius: 0;
+      overflow: visible;
+    }
+
+    .roundup-item:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .roundup-item.odd {
+      flex-direction: row-reverse;
+    }
+  }
+
+  /* Media Section */
+  .roundup-media-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background-color: var(--color-surface);
+  }
+
+  .media-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .roundup-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .roundup-item:hover .roundup-image {
+    transform: scale(1.05);
+  }
+
+  .roundup-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .external-domain-label {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background-color: rgba(17, 17, 17, 0.8);
+    backdrop-filter: blur(4px);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    letter-spacing: 0.025em;
+  }
+
+  /* Info Section */
+  .roundup-info-wrapper {
+    flex: 1.1;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .roundup-info-wrapper {
+      padding: 0;
+    }
+  }
+
+  .roundup-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .item-number {
+    font-family: var(--font-heading);
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--color-primary);
+    line-height: 1;
+    opacity: 0.85;
+  }
+
+  .item-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-top: 0.25rem;
+  }
+
+  .item-title a:hover {
+    color: var(--color-primary);
+  }
+
+  /* Internal Recipe Metadata */
+  .item-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .meta-time {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  .meta-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .item-description {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+  }
+
+  /* Buttons styling */
+  .cta-button {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--radius-lg);
+    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    margin-top: 0.5rem;
+    cursor: pointer;
+  }
+
+  .internal-btn {
+    background-color: var(--color-text);
+    color: #ffffff;
+  }
+
+  .internal-btn:hover {
+    background-color: var(--color-primary);
+    transform: translateX(4px);
+  }
+
+  .external-btn {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border: 1.5px solid var(--color-border);
+  }
+
+  .external-btn:hover {
+    background-color: #ffffff;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .ml-1 {
+    margin-left: 0.25rem;
+  }
+</style>

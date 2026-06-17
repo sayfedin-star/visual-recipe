@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds and outputs
+dist/
+.astro/
+.wrangler/
+.sanity/
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# OS files
+.DS_Store
+Thumbs.db

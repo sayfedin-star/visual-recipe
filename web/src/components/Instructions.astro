@@ -1,0 +1,211 @@
+---
+import SanityImage from './SanityImage.astro';
+
+interface Step {
+  stepNumber?: number;
+  instructionText: string;
+  stepImage?: any;
+}
+
+interface Props {
+  instructions: Step[];
+}
+
+const { instructions = [] } = Astro.props;
+---
+
+<div class="instructions-container">
+  <h2 class="section-title">Instructions</h2>
+
+  {instructions.length === 0 ? (
+    <p class="empty-msg">No instructions listed.</p>
+  ) : (
+    <ol class="steps-list">
+      {instructions.map((step, idx) => {
+        const stepNum = step.stepNumber || (idx + 1);
+        return (
+          <li class="step-item" data-step-item>
+            <div class="step-header">
+              <span class="step-badge">Step {stepNum}</span>
+              <!-- Optional Complete Checkbox -->
+              <button class="step-check-btn" aria-label={`Mark Step ${stepNum} as complete`}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 check-mark">
+                  <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            <div class="step-body">
+              <p class="step-text">{step.instructionText}</p>
+              
+              <!-- Step Image -->
+              {step.stepImage && (
+                <div class="step-image-wrapper">
+                  <SanityImage
+                    src={step.stepImage}
+                    alt={step.stepImage.alt || `Instruction step ${stepNum} illustration`}
+                    width={500}
+                    height={350}
+                    class="step-img"
+                  />
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  )}
+</div>
+
+<script>
+  // Add mark as complete styling toggle for steps
+  const checkButtons = document.querySelectorAll('.step-check-btn');
+  checkButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const stepItem = btn.closest('[data-step-item]');
+      if (stepItem) {
+        stepItem.classList.toggle('completed-step');
+      }
+    });
+  });
+</script>
+
+<style>
+  .instructions-container {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-surface);
+  }
+
+  .steps-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .step-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed var(--color-border);
+    transition: opacity 0.3s;
+  }
+
+  .step-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  /* Mark as complete opacity styling */
+  .step-item.completed-step {
+    opacity: 0.5;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-badge {
+    background-color: #111111;
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: var(--radius-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .completed-step .step-badge {
+    background-color: var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  /* Step check button */
+  .step-check-btn {
+    background-color: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .step-check-btn:hover {
+    border-color: #555;
+    color: #111111;
+  }
+
+  .completed-step .step-check-btn {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+    transform: scale(1.05);
+  }
+
+  .check-mark {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .completed-step .check-mark {
+    opacity: 1;
+  }
+
+  /* Step Body details */
+  .step-body {
+    padding-left: 0.25rem;
+  }
+
+  .step-text {
+    font-size: 1rem;
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    white-space: pre-line;
+  }
+
+  .completed-step .step-text {
+    text-decoration: line-through;
+  }
+
+  .step-image-wrapper {
+    margin-top: 1rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    max-width: 500px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+  }
+
+  .step-img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+  }
+
+  .empty-msg {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

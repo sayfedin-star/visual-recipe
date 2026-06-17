@@ -1,0 +1,184 @@
+---
+interface IngredientGroup {
+  groupName?: string;
+  items: string[];
+}
+
+interface Props {
+  ingredients: IngredientGroup[];
+}
+
+const { ingredients = [] } = Astro.props;
+---
+
+<div class="ingredients-container">
+  <h2 class="section-title">Ingredients</h2>
+  
+  {ingredients.length === 0 ? (
+    <p class="empty-msg">No ingredients listed.</p>
+  ) : (
+    <div class="ingredients-lists">
+      {ingredients.map((group, groupIdx) => (
+        <div class="ingredient-group">
+          {group.groupName && (
+            <h3 class="group-title">{group.groupName}</h3>
+          )}
+          <ul class="checklist-items">
+            {group.items.map((item, itemIdx) => {
+              const itemId = `ing-${groupIdx}-${itemIdx}`;
+              return (
+                <li class="checklist-item">
+                  <label class="checkbox-container">
+                    <input type="checkbox" id={itemId} class="ingredient-checkbox" />
+                    <span class="custom-checkbox">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="check-icon w-3.5 h-3.5">
+                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                      </svg>
+                    </span>
+                    <span class="ingredient-text">{item}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+<script>
+  // Add simple check/uncheck styling toggle
+  const checkboxes = document.querySelectorAll('.ingredient-checkbox');
+  checkboxes.forEach((cb) => {
+    cb.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const textSpan = target.closest('label')?.querySelector('.ingredient-text');
+      if (textSpan) {
+        if (target.checked) {
+          textSpan.classList.add('checked-off');
+        } else {
+          textSpan.classList.remove('checked-off');
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .ingredients-container {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--color-surface);
+  }
+
+  .ingredients-lists {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .ingredient-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .group-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+    padding-left: 0.25rem;
+    border-left: 3px solid var(--color-primary);
+    line-height: 1.2;
+  }
+
+  .checklist-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .checklist-item {
+    display: block;
+  }
+
+  /* Custom Checkbox Design */
+  .checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .ingredient-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+
+  .custom-checkbox {
+    flex-shrink: 0;
+    height: 20px;
+    width: 20px;
+    background-color: var(--color-surface);
+    border: 1.5px solid var(--color-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+    margin-top: 2px;
+  }
+
+  .checkbox-container:hover .custom-checkbox {
+    border-color: #555;
+  }
+
+  .ingredient-checkbox:checked ~ .custom-checkbox {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .check-icon {
+    color: #ffffff;
+    display: none;
+  }
+
+  .ingredient-checkbox:checked ~ .custom-checkbox .check-icon {
+    display: block;
+  }
+
+  .ingredient-text {
+    font-size: 0.95rem;
+    color: var(--color-text);
+    transition: color 0.2s, text-decoration 0.2s;
+    line-height: 1.4;
+  }
+
+  /* Strikethrough checked-off items */
+  .ingredient-text.checked-off {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+
+  .empty-msg {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+</style>

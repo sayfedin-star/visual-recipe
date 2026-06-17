@@ -1,0 +1,88 @@
+---
+import SanityImage from './SanityImage.astro';
+
+interface Props {
+  recipe: {
+    _id?: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    mainImage: any;
+    cardAspectRatio?: 'standard' | 'tall' | 'super-tall';
+    badges?: string[];
+    intentTags?: string[];
+    season?: string;
+    parentCluster?: { title: string; slug: string };
+    publicationType?: 'single' | 'roundup';
+    jumpToRecipeAnchor?: string;
+  };
+}
+
+const { recipe } = Astro.props;
+
+// Map the card aspect ratio options
+const aspectClasses = {
+  standard: 'aspect-[4/3]',
+  tall: 'aspect-[2/3]',
+  'super-tall': 'aspect-[1/2]',
+};
+
+const aspectClass = aspectClasses[recipe.cardAspectRatio || 'tall'];
+const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
+---
+
+<article class="recipe-card group" data-recipe-id={recipe._id}>
+  <!-- Card image container -->
+  <div class={`image-container ${aspectClass}`}>
+    <a href={`/recipe/${recipe.slug}#${jumpAnchor}`} class="image-link" aria-label={`View recipe instructions for ${recipe.title}`}>
+      <SanityImage
+        src={recipe.mainImage}
+        alt={recipe.mainImage?.alt || recipe.title}
+        width={400}
+        height={recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600}
+        sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
+        class="card-img"
+      />
+      <!-- Hover Overlay -->
+      <div class="hover-overlay">
+        <span class="view-btn">View Recipe</span>
+        <!-- Pinterest-like red Save button -->
+        <span class="save-btn" data-save-btn>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+          </svg>
+        </span>
+      </div>
+    </a>
+    
+    <!-- Floating Badge on Card -->
+    {recipe.parentCluster && (
+      <a href={`/hub/${recipe.parentCluster.slug}`} class="category-badge">
+        {recipe.parentCluster.title}
+      </a>
+    )}
+
+    {recipe.publicationType === 'roundup' && (
+      <span class="roundup-badge">
+        Round-Up
+      </span>
+    )}
+  </div>
+
+  <!-- Content Block -->
+  <div class="card-details">
+    <a href={`/recipe/${recipe.slug}`} class="title-link">
+      <h3 class="card-title">{recipe.title}</h3>
+    </a>
+    <p class="card-excerpt">{recipe.excerpt}</p>
+    
+    <!-- Badges list -->
+    {recipe.badges && recipe.badges.length > 0 && (
+      <div class="card-badges">
+        {recipe.badges.slice(0, 2).map((badge) => (
+          <span class="badge">{badge}</span>
+        ))}
+      </div>
+    )}
+  </div>
+</article>

@@ -1,0 +1,358 @@
+---
+import SanityImage from './SanityImage.astro';
+
+interface Props {
+  title: string;
+  excerpt: string;
+  mainImage: any;
+  prepTime?: number;
+  cookTime?: number;
+  servings?: number;
+  badges?: string[];
+  jumpToRecipeAnchor?: string;
+  recipeId: string;
+  isRoundup?: boolean;
+}
+
+const { 
+  title, 
+  excerpt, 
+  mainImage, 
+  prepTime, 
+  cookTime, 
+  servings, 
+  badges = [], 
+  jumpToRecipeAnchor = 'recipe-card',
+  recipeId,
+  isRoundup = false
+} = Astro.props;
+
+const totalTime = (prepTime || 0) + (cookTime || 0);
+const finalBadges = badges || [];
+---
+
+<section class="recipe-hero-section" data-recipe-id={recipeId}>
+  <div class="hero-grid">
+    <!-- Clickable Large Portrait Hero Image -->
+    <div class="hero-image-container">
+      <a href={`#${jumpToRecipeAnchor}`} class="hero-image-link" aria-label={isRoundup ? "Jump directly to the round-up items" : "Jump directly to recipe card instructions"}>
+        <div class="image-wrapper">
+          <SanityImage
+            src={mainImage}
+            alt={mainImage?.alt || title}
+            width={600}
+            height={900}
+            sizes="(min-width: 768px) 45vw, 100vw"
+            class="hero-img"
+            loading="eager"
+          />
+          <div class="image-overlay">
+            <span class="jump-label">{isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe'}</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Metadata Panel -->
+    <div class="hero-meta-container">
+      <div class="meta-content">
+        <h1 class="recipe-title">{title}</h1>
+        <p class="recipe-excerpt">{excerpt}</p>
+
+        <!-- Sticky Jump to Recipe Button -->
+        <div class="cta-actions">
+          <a href={`#${jumpToRecipeAnchor}`} class="jump-cta-btn">
+            <span>{isRoundup ? 'View Round-Up' : 'Jump to Recipe'}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 animate-bounce">
+              <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+            </svg>
+          </a>
+          <!-- Pinterest Save button next to CTA -->
+          <button class="save-cta-btn" data-save-btn>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+              <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+            </svg>
+            <span class="save-label">{isRoundup ? 'Save Round-Up' : 'Save Recipe'}</span>
+          </button>
+        </div>
+
+        <!-- Badges list -->
+        {finalBadges.length > 0 && (
+          <div class="recipe-badges-list">
+            {finalBadges.map((badge) => (
+              <span class="badge-tag">{badge}</span>
+            ))}
+          </div>
+        )}
+
+        <!-- Time and Servings grids -->
+        {(prepTime || cookTime || servings) && (
+          <div class="specs-grid">
+            {prepTime && (
+              <div class="spec-item">
+                <span class="spec-label">Prep Time</span>
+                <span class="spec-value">{prepTime} mins</span>
+              </div>
+            )}
+            {cookTime && (
+              <div class="spec-item">
+                <span class="spec-label">Cook Time</span>
+                <span class="spec-value">{cookTime} mins</span>
+              </div>
+            )}
+            {totalTime > 0 && (
+              <div class="spec-item highlight">
+                <span class="spec-label">Total Time</span>
+                <span class="spec-value">{totalTime} mins</span>
+              </div>
+            )}
+            {servings && (
+              <div class="spec-item">
+                <span class="spec-label">Servings</span>
+                <span class="spec-value">{servings} servings</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .recipe-hero-section {
+    margin-bottom: 3rem;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (min-width: 768px) {
+    .hero-grid {
+      grid-template-columns: 1.2fr 1.5fr;
+      gap: 3rem;
+    }
+  }
+
+  /* Image container */
+  .hero-image-container {
+    width: 100%;
+  }
+
+  .hero-image-link {
+    display: block;
+    cursor: pointer;
+  }
+
+  .image-wrapper {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    aspect-ratio: 2/3;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .image-wrapper:hover .hero-img {
+    transform: scale(1.03);
+  }
+
+  .image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .image-wrapper:hover .image-overlay {
+    opacity: 1;
+  }
+
+  .jump-label {
+    background-color: #ffffff;
+    color: #111111;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Metadata Panel */
+  .hero-meta-container {
+    padding: 1rem 0;
+  }
+
+  .recipe-title {
+    font-family: var(--font-heading);
+    font-size: 2.25rem;
+    line-height: 1.15;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+
+  @media (min-width: 1024px) {
+    .recipe-title {
+      font-size: 3rem;
+    }
+  }
+
+  .recipe-excerpt {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* CTA actions */
+  .cta-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .save-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 0.9rem 1.8rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, transform 0.2s, color 0.2s;
+  }
+
+  .save-cta-btn:hover {
+    background-color: var(--color-border);
+    transform: translateY(-2px);
+  }
+
+  .save-cta-btn:active {
+    transform: translateY(0);
+  }
+
+  .save-cta-btn.saved {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border-color: var(--color-primary);
+  }
+
+  .jump-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 0.9rem 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  .jump-cta-btn:hover {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .jump-cta-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Badges */
+  .recipe-badges-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .badge-tag {
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+  }
+
+  /* Specs Grid */
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .specs-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .spec-item {
+    background-color: var(--color-surface);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .spec-item.highlight {
+    background-color: #fcebeb;
+    border: 1px solid #f9ccd1;
+  }
+
+  .spec-item.highlight .spec-value {
+    color: var(--color-primary);
+  }
+
+  .spec-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.025em;
+  }
+
+  .spec-value {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+</style>

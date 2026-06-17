@@ -1,0 +1,96 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import FilterBar from '../components/FilterBar.astro';
+import Feed from '../components/Feed.astro';
+import Footer from '../components/Footer.astro';
+
+import { client } from '../lib/sanity';
+import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
+
+// Fetch initial data at build-time (Static Generation)
+let recipes = [];
+let clusters = [];
+
+try {
+  const [resRecipes, resClusters] = await Promise.all([
+    client.fetch(ALL_RECIPES_QUERY),
+    client.fetch(ALL_CLUSTERS_QUERY)
+  ]);
+  recipes = resRecipes;
+  clusters = resClusters;
+} catch (err) {
+  console.warn("Sanity fetch failed on index page:", err);
+}
+
+// Filter out categories that are sub-clusters to keep the top bar clean (or show all)
+const parentClusters = clusters.filter((c: any) => !c.parentCluster);
+---
+
+<Layout 
+  title="Visual Recipe Discovery Platform" 
+  description="Pinterest-styled feed of premium visual recipes. Browse, discover, and save your next delicious meal without friction."
+>
+  <Header />
+
+  <main class="main-content">
+    <!-- Premium Welcome Section -->
+    <section class="welcome-section">
+      <div class="welcome-container">
+        <h2 class="welcome-title">Find Your Next Culinary Inspiration</h2>
+        <p class="welcome-subtitle">
+          Explore our visual recipe space. Click an image to jump directly to cooking instructions, filter by category or season, and keep discovering.
+        </p>
+      </div>
+    </section>
+
+    <!-- Filter Bar -->
+    <FilterBar categories={parentClusters} />
+
+    <!-- Masonry Discovery Feed -->
+    <Feed recipes={recipes} initialCount={12} />
+  </main>
+
+  <Footer hubs={clusters} />
+</Layout>
+
+<style>
+  .main-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .welcome-section {
+    padding: 3rem 0 2rem 0;
+    text-align: center;
+  }
+
+  .welcome-container {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .welcome-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #111111 0%, #e60023 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  @media (min-width: 640px) {
+    .welcome-title {
+      font-size: 3rem;
+    }
+  }
+
+  .welcome-subtitle {
+    font-size: 1.05rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+</style>

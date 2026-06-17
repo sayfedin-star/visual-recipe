@@ -1,0 +1,286 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Feed from '../../components/Feed.astro';
+import Footer from '../../components/Footer.astro';
+import SanityImage from '../../components/SanityImage.astro';
+
+import { client } from '../../lib/sanity';
+import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY } from '../../lib/queries';
+
+export async function getStaticPaths() {
+  try {
+    const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
+    return clusters.map((cluster: any) => ({
+      params: { slug: cluster.slug },
+      props: { cluster, allClusters: clusters }
+    }));
+  } catch (err) {
+    console.warn("Sanity fetch failed in getStaticPaths for hubs:", err);
+    return [];
+  }
+}
+
+interface Props {
+  cluster: {
+    _id: string;
+    title: string;
+    slug: string;
+    description: string;
+    coverImage: any;
+    parentCluster?: { title: string; slug: string };
+  };
+  allClusters: any[];
+}
+
+const { cluster, allClusters } = Astro.props;
+
+// Fetch recipes in this cluster dynamically at build time
+const recipes = await client.fetch(RECIPES_BY_CLUSTER_QUERY, {
+  clusterId: cluster._id
+});
+
+// Calculate related hubs (e.g. sharing parent or siblings)
+const relatedHubs = allClusters
+  .filter((c) => c._id !== cluster._id && (c.parentCluster?.slug === cluster.parentCluster?.slug || c.parentCluster?.slug === cluster.slug || cluster.parentCluster?.slug === c.slug))
+  .slice(0, 4);
+---
+
+<Layout 
+  title={`${cluster.title} Recipes`} 
+  description={cluster.description || `Browse our Pinterest-style collection of recipes inside the ${cluster.title} space.`}
+  image={cluster.coverImage ? cluster.coverImage.asset : undefined}
+>
+  <Header />
+
+  <!-- Hub Header Banner (Portrait/Large Cover Image split) -->
+  <section class="hub-hero">
+    <div class="hub-hero-container">
+      {cluster.coverImage && (
+        <div class="hub-cover-wrapper">
+          <SanityImage
+            src={cluster.coverImage}
+            alt={cluster.coverImage.alt || cluster.title}
+            width={800}
+            height={400}
+            sizes="(min-width: 768px) 45vw, 100vw"
+            class="hub-cover-img"
+            loading="eager"
+          />
+        </div>
+      )}
+      <div class="hub-title-block">
+        {cluster.parentCluster && (
+          <a href={`/hub/${cluster.parentCluster.slug}`} class="hub-parent-link">
+            &larr; More in {cluster.parentCluster.title}
+          </a>
+        )}
+        <h1 class="hub-title">{cluster.title}</h1>
+        {cluster.description && <p class="hub-desc">{cluster.description}</p>}
+      </div>
+    </div>
+  </section>
+
+  <!-- Masonry Feed -->
+  <main class="hub-feed-content">
+    <h2 class="feed-section-title">Discovery Feed in this Space</h2>
+    <Feed recipes={recipes} initialCount={12} />
+
+    <!-- Related Hubs loop at bottom -->
+    {relatedHubs.length > 0 && (
+      <section class="related-hubs-section">
+        <h3 class="related-title">Explore Related Hubs</h3>
+        <div class="hubs-grid">
+          {relatedHubs.map((hub) => (
+            <a href={`/hub/${hub.slug}`} class="hub-card">
+              {hub.coverImage && (
+                <div class="hub-card-image">
+                  <SanityImage
+                    src={hub.coverImage}
+                    alt={hub.coverImage.alt || hub.title}
+                    width={300}
+                    height={200}
+                    class="hub-card-img"
+                  />
+                </div>
+              )}
+              <div class="hub-card-info">
+                <span class="hub-card-title">{hub.title}</span>
+                <span class="hub-card-link">Explore &rarr;</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </main>
+
+  <Footer hubs={allClusters} />
+</Layout>
+
+<style>
+  .hub-hero {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+  }
+
+  .hub-hero-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (min-width: 768px) {
+    .hub-hero-container {
+      grid-template-columns: 1.2fr 1.5fr;
+      gap: 3.5rem;
+    }
+  }
+
+  .hub-cover-wrapper {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hub-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hub-title-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .hub-parent-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 0.75rem;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+
+  .hub-parent-link:hover {
+    transform: translateX(-4px);
+  }
+
+  .hub-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+  }
+
+  .hub-desc {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    max-width: 600px;
+  }
+
+  .hub-feed-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .feed-section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+  }
+
+  /* Related Hubs Section */
+  .related-hubs-section {
+    border-top: 1px solid var(--color-border);
+    padding: 3.5rem 0;
+    margin-top: 3.5rem;
+  }
+
+  .related-title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 750;
+    margin-bottom: 1.5rem;
+  }
+
+  .hubs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .hubs-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .hub-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .hub-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .hub-card-image {
+    aspect-ratio: 1.5/1;
+    overflow: hidden;
+    background-color: var(--color-surface);
+  }
+
+  .hub-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s;
+  }
+
+  .hub-card:hover .hub-card-img {
+    transform: scale(1.03);
+  }
+
+  .hub-card-info {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1;
+  }
+
+  .hub-card-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-text);
+  }
+
+  .hub-card-link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: auto;
+  }
+</style>

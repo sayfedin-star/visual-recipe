@@ -1,0 +1,328 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import RecipeHero from '../../components/RecipeHero.astro';
+import Ingredients from '../../components/Ingredients.astro';
+import Instructions from '../../components/Instructions.astro';
+import FaqSection from '../../components/FaqSection.astro';
+import Feed from '../../components/Feed.astro';
+import Footer from '../../components/Footer.astro';
+import RoundupItems from '../../components/RoundupItems.astro';
+import { portableTextToHtml } from '../../lib/portableText';
+
+import { client } from '../../lib/sanity';
+import { urlFor } from '../../lib/urlFor';
+import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
+
+export async function getStaticPaths() {
+  try {
+    const recipes = await client.fetch(ALL_RECIPES_QUERY);
+    const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
+    
+    return recipes.map((recipe: any) => ({
+      params: { slug: recipe.slug },
+      props: { allClusters: clusters }
+    }));
+  } catch (err) {
+    console.warn("Sanity fetch failed in getStaticPaths for recipes:", err);
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+const { allClusters } = Astro.props;
+
+// Fetch full recipe detail
+const recipe = await client.fetch(RECIPE_BY_SLUG_QUERY, { slug });
+
+if (!recipe) {
+  return Astro.redirect('/404');
+}
+
+// Fetch related recipes (check manual overrides first, fallback to automatic)
+let relatedRecipes = recipe.relatedRecipesManual || [];
+if (relatedRecipes.length === 0) {
+  relatedRecipes = await client.fetch(AUTO_RELATED_RECIPES_QUERY, {
+    recipeId: recipe._id,
+    parentId: recipe.parentCluster._id,
+    subId: recipe.subCluster?._id || recipe.parentCluster._id
+  });
+}
+
+// Ensure at least 6 related recipes to meet the "internal link density of 6+ related recipes" requirement
+if (relatedRecipes.length < 6) {
+  // Pad with featured recipes from the main index to keep feed rich
+  const fallbackQuery = await client.fetch(ALL_RECIPES_QUERY);
+  const fallbackItems = fallbackQuery
+    .filter((r: any) => r._id !== recipe._id && !relatedRecipes.some((rel: any) => rel._id === r._id))
+    .slice(0, 6 - relatedRecipes.length);
+  relatedRecipes = [...relatedRecipes, ...fallbackItems];
+}
+
+const isPureRelated = relatedRecipes.every((r: any) => r.parentCluster?.slug === recipe.parentCluster?.slug);
+const relatedSectionTitle = isPureRelated ? `More in ${recipe.parentCluster.title}` : 'More Recipes You\'ll Love';
+
+// Build structured SEO schemas (Recipe, ItemList/CollectionPage, & FAQPage)
+let recipeSchema: Record<string, any>;
+
+if (recipe.publicationType === 'roundup') {
+  recipeSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": recipe.title,
+    "description": recipe.excerpt,
+    "numberOfItems": recipe.roundupItems?.length || 0,
+    "itemListElement": recipe.roundupItems?.map((item: any, idx: number) => {
+      const targetUrl = item.externalUrl || `${Astro.site?.origin || 'https://visualrecipes.com'}/recipe/${item.recipe?.slug}`;
+      return {
+        "@type": "ListItem",
+        "position": idx + 1,
+        "name": item.title || item.recipe?.title,
+        "url": targetUrl
+      };
+    }) || []
+  };
+} else {
+  recipeSchema = {
+    "@context": "https://schema.org",
+    "@type": "Recipe",
+    "name": recipe.title,
+    "description": recipe.excerpt,
+    "image": urlFor(recipe.mainImage).url(),
+    "datePublished": recipe.publishedAt,
+    "prepTime": recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
+    "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
+    "totalTime": (recipe.prepTime || recipe.cookTime) ? `PT ${(recipe.prepTime || 0) + (recipe.cookTime || 0)}M` : undefined,
+    "recipeYield": recipe.servings ? `${recipe.servings} servings` : undefined,
+    "recipeIngredient": recipe.ingredients?.flatMap((group: any) => group.items) || [],
+    "recipeInstructions": recipe.instructions?.map((step: any, idx: number) => ({
+      "@type": "HowToStep",
+      "position": step.stepNumber || (idx + 1),
+      "text": step.instructionText,
+      "image": step.stepImage ? urlFor(step.stepImage).url() : undefined
+    })) || []
+  };
+
+  // Append FAQ if available
+  if (recipe.faq && recipe.faq.length > 0) {
+    recipeSchema["mainEntity"] = recipe.faq.map((item: any) => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }));
+  }
+}
+---
+
+<Layout 
+  title={recipe.title} 
+  description={recipe.excerpt}
+  image={urlFor(recipe.mainImage).url()}
+  schema={recipeSchema}
+>
+  <Header />
+
+  <main class="recipe-detail-main">
+    <div class="recipe-container">
+      
+      <!-- Recipe Hero -->
+      <RecipeHero 
+        title={recipe.title}
+        excerpt={recipe.excerpt}
+        mainImage={recipe.mainImage}
+        prepTime={recipe.prepTime}
+        cookTime={recipe.cookTime}
+        servings={recipe.servings}
+        badges={recipe.badges}
+        jumpToRecipeAnchor={recipe.jumpToRecipeAnchor}
+        recipeId={recipe._id}
+        isRoundup={recipe.publicationType === 'roundup'}
+      />
+
+      <!-- Body / Introduction Content -->
+      {recipe.body && recipe.body.length > 0 && (
+        <div class="recipe-body-content" set:html={portableTextToHtml(recipe.body)} />
+      )}
+
+      {recipe.publicationType === 'roundup' ? (
+        <div class="roundup-content-wrapper" id={recipe.jumpToRecipeAnchor || 'recipe-card'}>
+          <RoundupItems items={recipe.roundupItems || []} />
+        </div>
+      ) : (
+        <>
+          <!-- Content Core Grid (Ingredients & Instructions side by side or stacked) -->
+          <div class="recipe-content-grid" id={recipe.jumpToRecipeAnchor || 'recipe-card'}>
+            <div class="ingredients-column">
+              <Ingredients ingredients={recipe.ingredients || []} />
+            </div>
+            <div class="instructions-column">
+              <Instructions instructions={recipe.instructions || []} />
+            </div>
+          </div>
+
+          <!-- FAQ Section -->
+          {recipe.faq && recipe.faq.length > 0 && (
+            <div class="recipe-faq-wrapper">
+              <FaqSection faq={recipe.faq} />
+            </div>
+          )}
+        </>
+      )}
+
+      <!-- Related Discovery loop -->
+      <section class="related-discovery-section">
+        <div class="related-header">
+          <h2 class="related-section-title">{relatedSectionTitle}</h2>
+          <a href={`/hub/${recipe.parentCluster.slug}`} class="hub-explore-link">
+            Explore {recipe.parentCluster.title} Hub &rarr;
+          </a>
+        </div>
+        
+        <!-- Masonry loop of related recipes -->
+        <Feed recipes={relatedRecipes} initialCount={6} />
+      </section>
+
+    </div>
+  </main>
+
+  <Footer hubs={allClusters} />
+</Layout>
+
+<style>
+  .recipe-detail-main {
+    padding-top: 2rem;
+  }
+
+  .recipe-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Core layout grid (Ingredients Left, Instructions Right on Desktop) */
+  .recipe-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    margin-bottom: 3.5rem;
+    scroll-margin-top: 100px; /* offset for sticky header */
+  }
+
+  @media (min-width: 1024px) {
+    .recipe-content-grid {
+      grid-template-columns: 1fr 1.8fr;
+    }
+  }
+
+  .recipe-faq-wrapper {
+    margin-bottom: 4rem;
+  }
+
+  /* Related discovery loop */
+  .related-discovery-section {
+    border-top: 1px solid var(--color-border);
+    padding: 3.5rem 0;
+  }
+
+  .related-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 640px) {
+    .related-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .related-section-title {
+    font-size: 1.5rem;
+    font-weight: 850;
+    color: var(--color-text);
+  }
+
+  .hub-explore-link {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    transition: transform 0.2s;
+  }
+
+  .hub-explore-link:hover {
+    transform: translateX(4px);
+  }
+
+  /* Rich Text Body Content Styles */
+  .recipe-body-content {
+    margin: 2.5rem 0 3.5rem 0;
+    max-width: 800px;
+    font-size: 1.1rem;
+    line-height: 1.75;
+    color: var(--color-text-muted);
+  }
+
+  .recipe-body-content :global(.roundup-p) {
+    margin-bottom: 1.25rem;
+  }
+
+  .recipe-body-content :global(.roundup-h2) {
+    font-family: var(--font-heading);
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--color-text);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+  }
+
+  .recipe-body-content :global(.roundup-h3) {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 750;
+    color: var(--color-text);
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .recipe-body-content :global(.roundup-h4) {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .recipe-body-content :global(.roundup-ul),
+  .recipe-body-content :global(.roundup-ol) {
+    margin-left: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .recipe-body-content :global(li) {
+    padding-left: 0.25rem;
+  }
+
+  .recipe-body-content :global(.roundup-link) {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s;
+  }
+
+  .recipe-body-content :global(.roundup-link:hover) {
+    color: var(--color-primary-hover);
+  }
+</style>

@@ -1,0 +1,180 @@
+---
+import Card from './Card.astro';
+
+interface Props {
+  recipes: Array<{
+    _id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    mainImage: any;
+    cardAspectRatio?: 'standard' | 'tall' | 'super-tall';
+    badges?: string[];
+    intentTags?: string[];
+    season?: string;
+    parentCluster?: { title: string; slug: string };
+  }>;
+  initialCount?: number;
+}
+
+const { recipes = [], initialCount = 12 } = Astro.props;
+---
+
+<div class="feed-container">
+  {recipes.length === 0 ? (
+    <div class="empty-feed">
+      <p>No recipes found matching these filters.</p>
+    </div>
+  ) : (
+    <>
+      <div class="masonry-grid" id="recipes-feed">
+        {recipes.map((recipe, index) => {
+          const isHidden = index >= initialCount;
+          return (
+            <div 
+              class={`masonry-item ${isHidden ? 'hidden-item' : ''}`}
+              data-feed-item
+              data-intent={recipe.intentTags?.join(' ')}
+              data-season={recipe.season}
+              data-cluster={recipe.parentCluster?.slug}
+              data-badges={recipe.badges?.join(' ')}
+            >
+              <Card recipe={recipe} />
+            </div>
+          );
+        })}
+      </div>
+
+      {recipes.length > initialCount && (
+        <div class="feed-actions" id="load-more-container">
+          <button id="load-more-btn" class="load-more-button">
+            Discover More Recipes
+          </button>
+        </div>
+      )}
+    </>
+  )}
+</div>
+
+<script>
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadMoreContainer = document.getElementById('load-more-container');
+  const feed = document.getElementById('recipes-feed');
+
+  if (loadMoreBtn && feed && loadMoreContainer) {
+    const hiddenItems = Array.from(feed.querySelectorAll('.hidden-item'));
+    const step = 8; // Load 8 more cards at a time
+    let currentIndex = 0;
+
+    loadMoreBtn.addEventListener('click', () => {
+      const nextBatch = hiddenItems.slice(currentIndex, currentIndex + step);
+      
+      nextBatch.forEach((item) => {
+        item.classList.remove('hidden-item');
+        // Simple micro-animation on appearance
+        item.animate([
+          { opacity: 0, transform: 'translateY(15px)' },
+          { opacity: 1, transform: 'translateY(0)' }
+        ], {
+          duration: 350,
+          easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          fill: 'forwards'
+        });
+      });
+
+      currentIndex += step;
+
+      if (currentIndex >= hiddenItems.length) {
+        loadMoreContainer.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+<style>
+  .feed-container {
+    width: 100%;
+    margin-top: 1.5rem;
+  }
+
+  .empty-feed {
+    text-align: center;
+    padding: 4rem 2rem;
+    background-color: var(--color-surface);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+  }
+
+  /* CSS Columns Masonry Engine */
+  .masonry-grid {
+    column-count: 2;
+    column-gap: 0.75rem;
+    width: 100%;
+  }
+
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  /* Hidden item styling */
+  .hidden-item {
+    display: none !important;
+  }
+
+  /* Responsive column mappings */
+  @media (min-width: 640px) {
+    .masonry-grid {
+      column-count: 2;
+      column-gap: 1.25rem;
+    }
+    .masonry-item {
+      margin-bottom: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .masonry-grid {
+      column-count: 4;
+    }
+  }
+
+  /* Load More Action Button styling */
+  .feed-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .load-more-button {
+    background-color: #111111;
+    color: #ffffff;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.9rem 2.2rem;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  .load-more-button:hover {
+    background-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .load-more-button:active {
+    transform: translateY(0);
+  }
+</style>

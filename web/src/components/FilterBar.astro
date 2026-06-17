@@ -1,0 +1,223 @@
+---
+interface Props {
+  categories: Array<{ title: string; slug: string }>;
+  seasons?: string[];
+  badges?: string[];
+}
+
+const { 
+  categories = [], 
+  seasons = ['all-year', 'spring', 'summer', 'fall', 'winter'],
+  badges = ['20 Min', 'One Pan', 'Crowd Pleaser', 'Meal Prep', 'High Protein']
+} = Astro.props;
+---
+
+<div class="filter-bar-wrapper">
+  <!-- Scrollable Pill Container for Clusters/Categories -->
+  <div class="filter-group categories-scroll">
+    <button class="filter-pill active" data-filter-type="cluster" data-value="all">
+      All Clusters
+    </button>
+    {categories.map((category) => (
+      <button class="filter-pill" data-filter-type="cluster" data-value={category.slug}>
+        {category.title}
+      </button>
+    ))}
+  </div>
+
+  <!-- Additional Filter Dropdowns (Seasons & Badges) -->
+  <div class="filters-dropdowns">
+    <div class="select-wrapper">
+      <select id="season-filter" aria-label="Filter by Season" class="filter-select">
+        <option value="all">Any Season</option>
+        {seasons.map((season) => (
+          <option value={season}>{season.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
+        ))}
+      </select>
+      <span class="chevron">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+      </span>
+    </div>
+
+    <div class="select-wrapper">
+      <select id="badge-filter" aria-label="Filter by Badge" class="filter-select">
+        <option value="all">Any Badge</option>
+        {badges.map((badge) => (
+          <option value={badge.toLowerCase().replace(' ', '-')}>{badge}</option>
+        ))}
+      </select>
+      <span class="chevron">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+        </svg>
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let activeCluster = 'all';
+  let activeSeason = 'all';
+  let activeBadge = 'all';
+
+  const pills = document.querySelectorAll('[data-filter-type="cluster"]');
+  const seasonSelect = document.getElementById('season-filter') as HTMLSelectElement;
+  const badgeSelect = document.getElementById('badge-filter') as HTMLSelectElement;
+  const feedItems = document.querySelectorAll('[data-feed-item]') as NodeListOf<HTMLElement>;
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  const loadMoreContainer = document.getElementById('load-more-container') as HTMLElement;
+
+  function applyFilters() {
+    let visibleCount = 0;
+    
+    feedItems.forEach((item) => {
+      const cluster = item.getAttribute('data-cluster') || '';
+      const season = item.getAttribute('data-season') || '';
+      const badges = (item.getAttribute('data-badges') || '').toLowerCase().replace(' ', '-');
+      const intent = item.getAttribute('data-intent') || '';
+
+      const matchCluster = activeCluster === 'all' || cluster === activeCluster;
+      const matchSeason = activeSeason === 'all' || season === activeSeason || season === 'all-year';
+      const matchBadge = activeBadge === 'all' || badges.includes(activeBadge) || intent.includes(activeBadge);
+
+      if (matchCluster && matchSeason && matchBadge) {
+        // Show item (but hide the load more overflow initially if filters are reset)
+        item.style.display = 'block';
+        item.classList.remove('hidden-item');
+        visibleCount++;
+      } else {
+        item.style.display = 'none';
+        item.classList.add('hidden-item');
+      }
+    });
+
+    // Hide load more button if filters have reduced the results count
+    if (loadMoreContainer) {
+      if (activeCluster !== 'all' || activeSeason !== 'all' || activeBadge !== 'all') {
+        loadMoreContainer.style.display = 'none';
+      } else {
+        loadMoreContainer.style.display = 'flex';
+      }
+    }
+  }
+
+  // Bind Cluster Pill clicks
+  pills.forEach((pill) => {
+    pill.addEventListener('click', (e) => {
+      pills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      activeCluster = pill.getAttribute('data-value') || 'all';
+      applyFilters();
+    });
+  });
+
+  // Bind Select elements
+  if (seasonSelect) {
+    seasonSelect.addEventListener('change', () => {
+      activeSeason = seasonSelect.value;
+      applyFilters();
+    });
+  }
+
+  if (badgeSelect) {
+    badgeSelect.addEventListener('change', () => {
+      activeBadge = badgeSelect.value;
+      applyFilters();
+    });
+  }
+</script>
+
+<style>
+  .filter-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 2rem;
+  }
+
+  @media (min-width: 768px) {
+    .filter-bar-wrapper {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  /* Scrollable cluster tags */
+  .categories-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    padding-bottom: 0.25rem;
+  }
+
+  .categories-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  .filter-pill {
+    flex-shrink: 0;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.5rem 1.1rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .filter-pill:hover {
+    background-color: var(--color-border);
+  }
+
+  .filter-pill.active {
+    background-color: #111111;
+    color: #ffffff;
+  }
+
+  /* Dropdown Selects */
+  .filters-dropdowns {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .filter-select {
+    appearance: none;
+    background-color: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 550;
+    color: var(--color-text);
+    padding: 0.5rem 2.2rem 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .filter-select:hover, .filter-select:focus {
+    border-color: #111111;
+  }
+
+  .chevron {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    color: var(--color-text-muted);
+  }
+</style>

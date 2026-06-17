@@ -1,0 +1,490 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+import { client } from '../lib/sanity';
+import { ALL_CLUSTERS_QUERY } from '../lib/queries';
+
+// Fetch clusters statically to populate search category filters
+let clusters = [];
+try {
+  clusters = await client.fetch(ALL_CLUSTERS_QUERY);
+} catch (err) {
+  console.warn("Sanity fetch failed on search page:", err);
+}
+const parentClusters = clusters.filter((c: any) => !c.parentCluster);
+---
+
+<Layout 
+  title="Explore Recipes" 
+  description="Search and filter recipes by cluster, season, time, or ingredient badges."
+>
+  <Header />
+
+  <main class="search-main">
+    <div class="search-container">
+      <h1 class="search-title">Explore Recipes</h1>
+      
+      <!-- Interactive Client Filter Console -->
+      <div class="search-controls">
+        <div class="search-bar-inner">
+          <input 
+            type="text" 
+            id="client-search-input" 
+            placeholder="Type keywords (e.g. Soup, Chicken, Salad)..." 
+            class="main-search-input"
+          />
+          <button id="clear-search-btn" class="clear-btn" aria-label="Clear search">Clear</button>
+        </div>
+
+        <div class="search-filters-row">
+          <!-- Cluster select -->
+          <div class="filter-box">
+            <label for="select-cluster" class="label">Cluster</label>
+            <select id="select-cluster" class="select">
+              <option value="all">All Clusters</option>
+              {parentClusters.map((c: any) => (
+                <option value={c.slug}>{c.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <!-- Season select -->
+          <div class="filter-box">
+            <label for="select-season" class="label">Season</label>
+            <select id="select-season" class="select">
+              <option value="all">Any Season</option>
+              <option value="all-year">All Year</option>
+              <option value="spring">Spring</option>
+              <option value="summer">Summer</option>
+              <option value="fall">Fall</option>
+              <option value="winter">Winter</option>
+            </select>
+          </div>
+
+          <!-- Badge select -->
+          <div class="filter-box">
+            <label for="select-badge" class="label">Badge</label>
+            <select id="select-badge" class="select">
+              <option value="all">Any Badge</option>
+              <option value="20-min">20 Min</option>
+              <option value="one-pan">One Pan</option>
+              <option value="crowd-pleaser">Crowd Pleaser</option>
+              <option value="meal-prep">Meal Prep</option>
+              <option value="high-protein">High Protein</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed Container -->
+      <div class="results-header">
+        <span id="results-count" class="count-label">Loading index...</span>
+      </div>
+
+      <div class="search-masonry-feed" id="search-feed">
+        <!-- Rendered client-side -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Recipe Card Template for dynamic rendering -->
+  <template id="recipe-card-template">
+    <article class="recipe-card group">
+      <!-- Card image container -->
+      <div class="image-container">
+        <a href="" class="image-link">
+          <img src="" alt="" class="card-img" />
+          <!-- Hover Overlay -->
+          <div class="hover-overlay">
+            <span class="view-btn">View Recipe</span>
+            <!-- Pinterest-like red Save button -->
+            <span class="save-btn" data-save-btn>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+              </svg>
+            </span>
+          </div>
+        </a>
+        
+        <!-- Floating Badge on Card -->
+        <a href="" class="category-badge"></a>
+      </div>
+
+      <!-- Content Block -->
+      <div class="card-details">
+        <a href="" class="title-link">
+          <h3 class="card-title"></h3>
+        </a>
+        <p class="card-excerpt"></p>
+        
+        <!-- Badges list -->
+        <div class="card-badges"></div>
+      </div>
+    </article>
+  </template>
+
+  <Footer hubs={clusters} />
+</Layout>
+
+<script>
+  interface RecipeIndexItem {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    badges: string[];
+    intentTags: string[];
+    season: string;
+    parentCluster: string;
+    parentClusterSlug: string;
+    imageUrl: string;
+    cardAspectRatio: 'standard' | 'tall' | 'super-tall';
+    publicationType: 'single' | 'roundup';
+  }
+
+  let recipeIndex: RecipeIndexItem[] = [];
+  const searchInput = document.getElementById('client-search-input') as HTMLInputElement;
+  const clearBtn = document.getElementById('clear-search-btn');
+  const clusterSelect = document.getElementById('select-cluster') as HTMLSelectElement;
+  const seasonSelect = document.getElementById('select-season') as HTMLSelectElement;
+  const badgeSelect = document.getElementById('select-badge') as HTMLSelectElement;
+  const feedContainer = document.getElementById('search-feed');
+  const countLabel = document.getElementById('results-count');
+  const template = document.getElementById('recipe-card-template') as HTMLTemplateElement;
+
+  // Initialize search parameter from URL
+  function getQueryParam() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('q') || '';
+  }
+
+  // Load static search index
+  async function loadIndex() {
+    try {
+      const res = await fetch('/recipes-index.json');
+      recipeIndex = await res.json();
+      
+      const query = getQueryParam();
+      if (query && searchInput) {
+        searchInput.value = query;
+      }
+      
+      filterAndRender();
+    } catch (err) {
+      if (countLabel) countLabel.textContent = 'Error loading recipes index.';
+    }
+  }
+
+  function filterAndRender() {
+    if (!feedContainer || !countLabel) return;
+
+    const query = searchInput.value.toLowerCase().trim();
+    const cluster = clusterSelect.value;
+    const season = seasonSelect.value;
+    const badge = badgeSelect.value;
+
+    const filtered = recipeIndex.filter((item) => {
+      // Keyword matching (title, excerpt, parentCluster, badges, intentTags)
+      const matchKeyword = 
+        !query || 
+        item.title.toLowerCase().includes(query) ||
+        item.excerpt.toLowerCase().includes(query) ||
+        item.parentCluster.toLowerCase().includes(query) ||
+        item.badges.some(b => b.toLowerCase().includes(query)) ||
+        item.intentTags.some(t => t.toLowerCase().includes(query));
+
+      const matchCluster = cluster === 'all' || item.parentClusterSlug === cluster;
+      const matchSeason = season === 'all' || item.season === season || item.season === 'all-year';
+      const matchBadge = badge === 'all' || 
+        item.badges.some(b => b.toLowerCase().replace(' ', '-') === badge) ||
+        item.intentTags.some(t => t.toLowerCase().replace(' ', '-') === badge);
+
+      return matchKeyword && matchCluster && matchSeason && matchBadge;
+    });
+
+    countLabel.textContent = `${filtered.length} recipe${filtered.length === 1 ? '' : 's'} discovered`;
+    
+    // Clear feed
+    feedContainer.innerHTML = '';
+
+    if (filtered.length === 0) {
+      feedContainer.innerHTML = '<div class="empty-results">No matches found. Try broadening your keywords or filters.</div>';
+      return;
+    }
+
+    // Render cards using template
+    filtered.forEach((recipe) => {
+      const clone = template.content.cloneNode(true) as DocumentFragment;
+      
+      // Setup elements
+      const card = clone.querySelector('.recipe-card') as HTMLElement;
+      const imgContainer = clone.querySelector('.image-container') as HTMLElement;
+      const imgLink = clone.querySelector('.image-link') as HTMLAnchorElement;
+      const img = clone.querySelector('.card-img') as HTMLImageElement;
+      const categoryBadge = clone.querySelector('.category-badge') as HTMLAnchorElement;
+      const titleLink = clone.querySelector('.title-link') as HTMLAnchorElement;
+      const title = clone.querySelector('.card-title') as HTMLElement;
+      const excerpt = clone.querySelector('.card-excerpt') as HTMLElement;
+      const badgesContainer = clone.querySelector('.card-badges') as HTMLElement;
+      const saveBtn = clone.querySelector('[data-save-btn]') as HTMLElement;
+
+      // Roundup badge rendering
+      const existingRoundupBadge = imgContainer.querySelector('.roundup-badge');
+      if (existingRoundupBadge) {
+        existingRoundupBadge.remove();
+      }
+      if (recipe.publicationType === 'roundup') {
+        const roundupBadge = document.createElement('span');
+        roundupBadge.className = 'roundup-badge';
+        roundupBadge.textContent = 'Round-Up';
+        imgContainer.appendChild(roundupBadge);
+      }
+
+      // Set recipe ID for LocalStorage saving
+      card.setAttribute('data-recipe-id', recipe.id);
+
+      // Card aspect ratio mapping
+      const aspectClasses = {
+        standard: 'aspect-[4/3]',
+        tall: 'aspect-[2/3]',
+        'super-tall': 'aspect-[1/2]'
+      };
+      
+      const aspectClass = aspectClasses[recipe.cardAspectRatio] || 'aspect-[2/3]';
+      imgContainer.className = `image-container ${aspectClass}`;
+
+      // Populate content
+      imgLink.href = `/recipe/${recipe.slug}#recipe-card`;
+      imgLink.ariaLabel = `View recipe instructions for ${recipe.title}`;
+      img.src = recipe.imageUrl;
+      img.alt = recipe.title;
+      img.setAttribute('sizes', '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw');
+
+      if (recipe.parentCluster) {
+        categoryBadge.href = `/hub/${recipe.parentClusterSlug}`;
+        categoryBadge.textContent = recipe.parentCluster;
+      } else {
+        categoryBadge.style.display = 'none';
+      }
+
+      titleLink.href = `/recipe/${recipe.slug}`;
+      title.textContent = recipe.title;
+      excerpt.textContent = recipe.excerpt;
+
+      // Badges
+      if (recipe.badges && recipe.badges.length > 0) {
+        recipe.badges.slice(0, 2).forEach((badgeText) => {
+          const badgeSpan = document.createElement('span');
+          badgeSpan.className = 'badge';
+          badgeSpan.textContent = badgeText;
+          badgesContainer.appendChild(badgeSpan);
+        });
+      }
+
+      // Restore saved state locally
+      const savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]');
+      if (savedList.includes(recipe.id)) {
+        saveBtn.classList.add('saved');
+      }
+
+      feedContainer.appendChild(clone);
+    });
+  }
+
+  // Bind Listeners
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      // Update URL without reloading page
+      const params = new URLSearchParams(window.location.search);
+      if (searchInput.value) {
+        params.set('q', searchInput.value);
+      } else {
+        params.delete('q');
+      }
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({ path: newUrl }, '', newUrl);
+
+      filterAndRender();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      const params = new URLSearchParams(window.location.search);
+      params.delete('q');
+      const newUrl = `${window.location.pathname}`;
+      window.history.replaceState({ path: newUrl }, '', newUrl);
+      filterAndRender();
+    });
+  }
+
+  [clusterSelect, seasonSelect, badgeSelect].forEach((select) => {
+    if (select) {
+      select.addEventListener('change', filterAndRender);
+    }
+  });
+
+  // Load index on load
+  document.addEventListener('DOMContentLoaded', loadIndex);
+</script>
+
+<style>
+  .search-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .search-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
+  }
+
+  /* Filter Console styling */
+  .search-controls {
+    background-color: var(--color-surface);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .search-bar-inner {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .main-search-input {
+    flex-grow: 1;
+    background-color: #ffffff;
+    border: 1.5px solid var(--color-border);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-lg);
+    outline: none;
+    color: var(--color-text);
+    transition: border-color 0.2s;
+  }
+
+  .main-search-input:focus {
+    border-color: #111111;
+  }
+
+  .clear-btn {
+    background-color: #ffffff;
+    border: 1.5px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-family: var(--font-body);
+    font-weight: 600;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .clear-btn:hover {
+    background-color: var(--color-border);
+    color: #111111;
+  }
+
+  .search-filters-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .search-filters-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .filter-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .select {
+    background-color: #ffffff;
+    border: 1.5px solid var(--color-border);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 550;
+    color: var(--color-text);
+    padding: 0.65rem 1rem;
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .select:hover, .select:focus {
+    border-color: #111111;
+  }
+
+  /* Results count banner */
+  .results-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.75rem;
+  }
+
+  .count-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  /* Masonry Grid inside Search results */
+  .search-masonry-feed {
+    column-count: 2;
+    column-gap: 0.75rem;
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .search-masonry-feed {
+      column-count: 2;
+      column-gap: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .search-masonry-feed {
+      column-count: 3;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .search-masonry-feed {
+      column-count: 4;
+    }
+  }
+
+  .empty-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 4rem 2rem;
+    font-size: 1.1rem;
+  }
+</style>
