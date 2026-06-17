@@ -1,0 +1,18 @@
+/recipe/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/hub/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/
+  Cache-Control: public, max-age=1800, stale-while-revalidate=86400
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept
+
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.css
+  Cache-Control: public, max-age=31536000, immutable

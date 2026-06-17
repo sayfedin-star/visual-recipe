@@ -61,8 +61,8 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
 
     <!-- LocalStorage Save Recipes Synchronization Script -->
     <script>
-      // Restore saved status on load
-      const savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]');
+      let savedList: string[] = [];
+      try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
       document.querySelectorAll('[data-recipe-id]').forEach((card) => {
         const recipeId = card.getAttribute('data-recipe-id');
         if (recipeId && savedList.includes(recipeId)) {
@@ -84,7 +84,8 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
           const recipeId = card ? card.getAttribute('data-recipe-id') : null;
 
           if (recipeId) {
-            let saved = JSON.parse(localStorage.getItem('saved-recipes') || '[]');
+            let saved: string[] = [];
+            try { saved = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
             saveBtn.classList.toggle('saved');
             const isSaved = saveBtn.classList.contains('saved');
 
@@ -95,7 +96,7 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
             } else {
               saved = saved.filter((id: string) => id !== recipeId);
             }
-            localStorage.setItem('saved-recipes', JSON.stringify(saved));
+            try { localStorage.setItem('saved-recipes', JSON.stringify(saved)); } catch {}
             
             // Trigger a custom event to notify other components (like Saved board page)
             document.dispatchEvent(new CustomEvent('saved-recipes-changed', { detail: { recipeId, isSaved } }));

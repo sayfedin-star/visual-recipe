@@ -49,6 +49,7 @@ const ratingInfo = getRecipeRating(recipeId);
             sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
             class="hero-img"
             loading="eager"
+            fetchpriority="high"
           />
           <div class="image-overlay">
             <span class="jump-label">{isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe'}</span>
