@@ -85,76 +85,76 @@ const { recipes = [], initialCount = 12 } = Astro.props;
   const feed = document.getElementById('recipes-feed');
   const dataEl = document.getElementById('feed-remaining-data');
 
-  if (!loadMoreBtn || !feed || !dataEl) return;
+  if (loadMoreBtn && feed && dataEl) {
+    let remainingRecipes: any[] = [];
+    try { remainingRecipes = JSON.parse(dataEl.textContent || '[]'); } catch {}
 
-  let remainingRecipes: any[] = [];
-  try { remainingRecipes = JSON.parse(dataEl.textContent || '[]'); } catch {}
+    const step = 8;
+    let currentIndex = 0;
 
-  const step = 8;
-  let currentIndex = 0;
+    const aspectMap: Record<string, string> = {
+      standard: 'aspect-[4/3]',
+      tall: 'aspect-[2/3]',
+      'super-tall': 'aspect-[1/2]',
+    };
 
-  const aspectMap: Record<string, string> = {
-    standard: 'aspect-[4/3]',
-    tall: 'aspect-[2/3]',
-    'super-tall': 'aspect-[1/2]',
-  };
+    function buildCardHTML(r: any): string {
+      const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
+      const imgSrc = r.imageUrl
+        ? `/images/production/${r.imageUrl}?w=400&auto=format&q=70`
+        : '/favicon.svg';
+      const clusterBadge = r.parentCluster
+        ? `<a href="/hub/${r.parentCluster.slug}" class="category-badge">${r.parentCluster.title}</a>`
+        : '';
+      const roundupBadge = r.publicationType === 'roundup'
+        ? `<span class="roundup-badge">Round-Up</span>`
+        : '';
+      const badgesHTML = r.badges.slice(0, 2)
+        .map((b: string) => `<span class="badge">${b}</span>`)
+        .join('');
 
-  function buildCardHTML(r: any): string {
-    const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
-    const imgSrc = r.imageUrl
-      ? `/images/production/${r.imageUrl}?w=400&auto=format&q=70`
-      : '/favicon.svg';
-    const clusterBadge = r.parentCluster
-      ? `<a href="/hub/${r.parentCluster.slug}" class="category-badge">${r.parentCluster.title}</a>`
-      : '';
-    const roundupBadge = r.publicationType === 'roundup'
-      ? `<span class="roundup-badge">Round-Up</span>`
-      : '';
-    const badgesHTML = r.badges.slice(0, 2)
-      .map((b: string) => `<span class="badge">${b}</span>`)
-      .join('');
-
-    return `
-      <article class="recipe-card" data-recipe-id="${r._id}">
-        <div class="image-container ${aspect}">
-          <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="image-link"
-             aria-label="View recipe instructions for ${r.title}">
-            <img src="${imgSrc}" alt="${r.title}" width="400" height="600"
-                 loading="lazy" decoding="async" class="card-img" />
-            <div class="hover-overlay">
-              <span class="view-btn">View Recipe</span>
-            </div>
-          </a>
-          ${clusterBadge}${roundupBadge}
-        </div>
-        <div class="card-details">
-          <a href="/recipe/${r.slug}" class="title-link">
-            <h3 class="card-title">${r.title}</h3>
-          </a>
-          <p class="card-excerpt">${r.excerpt || ''}</p>
-          ${badgesHTML ? `<div class="card-badges">${badgesHTML}</div>` : ''}
-        </div>
-      </article>`;
-  }
-
-  loadMoreBtn.addEventListener('click', () => {
-    const batch = remainingRecipes.slice(currentIndex, currentIndex + step);
-    batch.forEach(r => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'masonry-item';
-      wrapper.setAttribute('data-feed-item', '');
-      wrapper.innerHTML = buildCardHTML(r);
-      wrapper.animate(
-        [{ opacity: 0, transform: 'translateY(15px)' }, { opacity: 1, transform: 'translateY(0)' }],
-        { duration: 350, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' }
-      );
-      feed.appendChild(wrapper);
-    });
-    currentIndex += step;
-    if (currentIndex >= remainingRecipes.length) {
-      loadMoreContainer!.style.display = 'none';
+      return `
+        <article class="recipe-card" data-recipe-id="${r._id}">
+          <div class="image-container ${aspect}">
+            <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="image-link"
+               aria-label="View recipe instructions for ${r.title}">
+              <img src="${imgSrc}" alt="${r.title}" width="400" height="600"
+                   loading="lazy" decoding="async" class="card-img" />
+              <div class="hover-overlay">
+                <span class="view-btn">View Recipe</span>
+              </div>
+            </a>
+            ${clusterBadge}${roundupBadge}
+          </div>
+          <div class="card-details">
+            <a href="/recipe/${r.slug}" class="title-link">
+              <h3 class="card-title">${r.title}</h3>
+            </a>
+            <p class="card-excerpt">${r.excerpt || ''}</p>
+            ${badgesHTML ? `<div class="card-badges">${badgesHTML}</div>` : ''}
+          </div>
+        </article>`;
     }
-  });
+
+    loadMoreBtn.addEventListener('click', () => {
+      const batch = remainingRecipes.slice(currentIndex, currentIndex + step);
+      batch.forEach(r => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'masonry-item';
+        wrapper.setAttribute('data-feed-item', '');
+        wrapper.innerHTML = buildCardHTML(r);
+        wrapper.animate(
+          [{ opacity: 0, transform: 'translateY(15px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 350, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' }
+        );
+        feed.appendChild(wrapper);
+      });
+      currentIndex += step;
+      if (currentIndex >= remainingRecipes.length) {
+        loadMoreContainer!.style.display = 'none';
+      }
+    });
+  }
 </script>
 
 <style>
