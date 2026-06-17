@@ -1,5 +1,6 @@
 ---
 import SanityImage from './SanityImage.astro';
+import { getRecipeRating } from '../lib/sanity';
 
 interface Props {
   title: string;
@@ -12,6 +13,7 @@ interface Props {
   jumpToRecipeAnchor?: string;
   recipeId: string;
   isRoundup?: boolean;
+  parentCluster?: { title: string; slug: string };
 }
 
 const { 
@@ -24,11 +26,13 @@ const {
   badges = [], 
   jumpToRecipeAnchor = 'recipe-card',
   recipeId,
-  isRoundup = false
+  isRoundup = false,
+  parentCluster
 } = Astro.props;
 
 const totalTime = (prepTime || 0) + (cookTime || 0);
 const finalBadges = badges || [];
+const ratingInfo = getRecipeRating(recipeId);
 ---
 
 <section class="recipe-hero-section" data-recipe-id={recipeId}>
@@ -56,6 +60,33 @@ const finalBadges = badges || [];
     <!-- Metadata Panel -->
     <div class="hero-meta-container">
       <div class="meta-content">
+        <!-- Breadcrumbs & Rating Header (Pinterest style) -->
+        <div class="recipe-header-meta">
+          <div class="breadcrumbs">
+            <a href="/" class="breadcrumb-link">HOME</a>
+            {parentCluster && (
+              <span class="breadcrumb-separator">/</span>
+              <a href={`/hub/${parentCluster.slug}`} class="breadcrumb-link">{parentCluster.title.toUpperCase()}</a>
+            )}
+          </div>
+          
+          <div class="rating-block">
+            <div class="stars" aria-label={`Rating: ${ratingInfo.rating} out of 5 stars`}>
+              {Array.from({ length: 5 }).map((_, i) => {
+                const filled = i < Math.floor(ratingInfo.rating);
+                return (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill={filled ? "#f39c12" : "none"} stroke="#f39c12" stroke-width="1.5" class="star-icon">
+                    <path d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.6 3.1-.114 4.707c-.02.836.88 1.48 1.579 1.025L10 15.547l4.088 2.602c.699.455 1.599-.189 1.579-1.025l-.114-4.707 3.6-3.1c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" />
+                  </svg>
+                );
+              })}
+            </div>
+            <span class="rating-text">
+              <strong>{ratingInfo.rating}</strong> from {ratingInfo.votes} votes
+            </span>
+          </div>
+        </div>
+
         <h1 class="recipe-title">{title}</h1>
         <p class="recipe-excerpt">{excerpt}</p>
 
@@ -354,5 +385,71 @@ const finalBadges = badges || [];
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--color-text);
+  }
+
+  /* Breadcrumbs and Star Rating Styles */
+  .recipe-header-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .recipe-header-meta {
+      flex-direction: row;
+      align-items: center;
+      gap: 1.5rem;
+    }
+  }
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .breadcrumb-link {
+    color: var(--color-text-muted);
+    transition: color 0.2s;
+  }
+
+  .breadcrumb-link:hover {
+    color: var(--color-primary);
+  }
+
+  .breadcrumb-separator {
+    color: var(--color-border);
+  }
+
+  .rating-block {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .stars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .star-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .rating-text {
+    font-size: 0.825rem;
+    color: var(--color-text-muted);
+  }
+
+  .rating-text strong {
+    color: var(--color-text);
+    font-weight: 700;
   }
 </style>

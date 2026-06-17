@@ -10,7 +10,7 @@ import Footer from '../../components/Footer.astro';
 import RoundupItems from '../../components/RoundupItems.astro';
 import { portableTextToHtml } from '../../lib/portableText';
 
-import { client } from '../../lib/sanity';
+import { client, getRecipeRating } from '../../lib/sanity';
 import { urlFor } from '../../lib/urlFor';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
 
@@ -83,12 +83,14 @@ if (recipe.publicationType === 'roundup') {
     }) || []
   };
 } else {
+  const ratingInfo = getRecipeRating(recipe._id);
+
   recipeSchema = {
     "@context": "https://schema.org",
     "@type": "Recipe",
     "name": recipe.title,
     "description": recipe.excerpt,
-    "image": urlFor(recipe.mainImage).url(),
+    "image": urlFor(recipe.mainImage).url().replace('https://cdn.sanity.io/images/', '/images/'),
     "datePublished": recipe.publishedAt,
     "prepTime": recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
     "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
@@ -99,8 +101,13 @@ if (recipe.publicationType === 'roundup') {
       "@type": "HowToStep",
       "position": step.stepNumber || (idx + 1),
       "text": step.instructionText,
-      "image": step.stepImage ? urlFor(step.stepImage).url() : undefined
-    })) || []
+      "image": step.stepImage ? urlFor(step.stepImage).url().replace('https://cdn.sanity.io/images/', '/images/') : undefined
+    })) || [],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": ratingInfo.rating.toString(),
+      "reviewCount": ratingInfo.votes.toString()
+    }
   };
 
   // Append FAQ if available
@@ -120,7 +127,7 @@ if (recipe.publicationType === 'roundup') {
 <Layout 
   title={recipe.title} 
   description={recipe.excerpt}
-  image={urlFor(recipe.mainImage).url()}
+  image={urlFor(recipe.mainImage).url().replace('https://cdn.sanity.io/images/', '/images/')}
   schema={recipeSchema}
 >
   <Header />
@@ -140,6 +147,7 @@ if (recipe.publicationType === 'roundup') {
         jumpToRecipeAnchor={recipe.jumpToRecipeAnchor}
         recipeId={recipe._id}
         isRoundup={recipe.publicationType === 'roundup'}
+        parentCluster={recipe.parentCluster}
       />
 
       <!-- Body / Introduction Content -->

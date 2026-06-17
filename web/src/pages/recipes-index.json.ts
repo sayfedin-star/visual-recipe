@@ -21,9 +21,10 @@ export const GET: APIRoute = async () => {
       imageUrl: urlFor(recipe.mainImage)
         .width(400)
         .height(recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600)
-        .auto('format')
+        .format('avif')
         .quality(80)
-        .url(),
+        .url()
+        .replace('https://cdn.sanity.io/images/', '/images/'),
       cardAspectRatio: recipe.cardAspectRatio || 'tall',
       publicationType: recipe.publicationType || 'single'
     }));

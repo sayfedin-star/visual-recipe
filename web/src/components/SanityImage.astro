@@ -18,7 +18,7 @@ if (!src) {
 }
 
 // Generate the optimized URLs using Sanity image pipeline
-let imageUrl = urlFor(src).auto('format').quality(80);
+let imageUrl = urlFor(src).format('avif').quality(80);
 
 if (width) {
   imageUrl = imageUrl.width(width);
@@ -27,19 +27,20 @@ if (height) {
   imageUrl = imageUrl.height(height);
 }
 
-const mainUrl = imageUrl.url();
+const mainUrl = imageUrl.url().replace('https://cdn.sanity.io/images/', '/images/');
 
 // Generate responsive srcsets for better performance
 const widths = [150, 300, 450, 600, 750, 900, 1050, 1200];
 const srcset = widths
   .map((w) => {
-    let urlBuilder = urlFor(src).auto('format').quality(80).width(w);
+    let urlBuilder = urlFor(src).format('avif').quality(80).width(w);
     if (height && width) {
       // Keep aspect ratio
       const calculatedHeight = Math.round((w / width) * height);
       urlBuilder = urlBuilder.height(calculatedHeight);
     }
-    return `${urlBuilder.url()} ${w}w`;
+    const url = urlBuilder.url().replace('https://cdn.sanity.io/images/', '/images/');
+    return `${url} ${w}w`;
   })
   .join(', ');
 ---
