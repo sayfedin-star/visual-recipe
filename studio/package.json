@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "sanity dev",
     "build": "sanity build",
-    "start": "sanity dev"
+    "start": "sanity dev",
+    "deploy": "sanity deploy"
   },
   "dependencies": {
     "react": "^18.2.0",
