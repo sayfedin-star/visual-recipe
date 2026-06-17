@@ -16,7 +16,16 @@ export const GET: APIRoute = async ({ params, request }) => {
   const sanityUrl = `https://cdn.sanity.io/images/${path}${searchParams}`;
 
   try {
-    const response = await fetch(sanityUrl);
+    // Forward the Accept header from the browser to Sanity for content negotiation (AVIF/WebP)
+    const forwardHeaders = new Headers();
+    const acceptHeader = request.headers.get('accept');
+    if (acceptHeader) {
+      forwardHeaders.set('accept', acceptHeader);
+    }
+
+    const response = await fetch(sanityUrl, {
+      headers: forwardHeaders
+    });
     
     if (!response.ok) {
       return new Response('Failed to fetch image from source', { status: response.status });
@@ -38,6 +47,7 @@ export const GET: APIRoute = async ({ params, request }) => {
     // Set aggressive Cloudflare and Browser caching headers
     newHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
     newHeaders.set('CDN-Cache-Control', 'public, max-age=31536000');
+    newHeaders.set('Vary', 'Accept');
     newHeaders.set('Access-Control-Allow-Origin', '*');
 
     return new Response(response.body, {
