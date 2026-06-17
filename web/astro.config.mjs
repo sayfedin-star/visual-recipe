@@ -4,9 +4,10 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   site: 'https://visualrecipes.com',
   output: 'hybrid',
-  adapter: cloudflare({
-    imageService: 'passthrough'
-  }),
+  adapter: cloudflare(),
+  image: {
+    domains: ['cdn.sanity.io'],
+  },
   build: {
     inlineStylesheets: 'always'
   }

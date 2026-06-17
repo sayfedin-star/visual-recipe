@@ -90,7 +90,7 @@ if (recipe.publicationType === 'roundup') {
     "@type": "Recipe",
     "name": recipe.title,
     "description": recipe.excerpt,
-    "image": urlFor(recipe.mainImage).url().replace('https://cdn.sanity.io/images/', '/images/'),
+    "image": urlFor(recipe.mainImage).url(),
     "datePublished": recipe.publishedAt,
     "prepTime": recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
     "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
@@ -101,7 +101,7 @@ if (recipe.publicationType === 'roundup') {
       "@type": "HowToStep",
       "position": step.stepNumber || (idx + 1),
       "text": step.instructionText,
-      "image": step.stepImage ? urlFor(step.stepImage).url().replace('https://cdn.sanity.io/images/', '/images/') : undefined
+      "image": step.stepImage ? urlFor(step.stepImage).url() : undefined
     })) || [],
     "aggregateRating": {
       "@type": "AggregateRating",
@@ -123,14 +123,24 @@ if (recipe.publicationType === 'roundup') {
   }
 }
 
-const heroImagePreload = getImageSrcSet(recipe.mainImage, 600, 900);
+const heroImageRawUrl = urlFor(recipe.mainImage).url();
+const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').url();
+
+import { getImage } from 'astro:assets';
+const heroImagePreload = await getImage({
+  src: heroImageRawUrl,
+  width: 600,
+  height: 900,
+  format: 'avif',
+  widths: [150, 300, 450, 600, 750, 900, 1050, 1200]
+});
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
 ---
 
 <Layout 
   title={recipe.title} 
   description={recipe.excerpt}
-  image={urlFor(recipe.mainImage).url().replace('https://cdn.sanity.io/images/', '/images/')}
+  image={ogImage}
   schema={recipeSchema}
 >
   <link 
@@ -138,7 +148,7 @@ const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc
     slot="head" 
     as="image" 
     href={heroImagePreload.src} 
-    imagesrcset={heroImagePreload.srcset} 
+    imagesrcset={heroImagePreload.srcSet.attribute} 
     imagesizes={heroImageSizes} 
     fetchpriority="high"
   />

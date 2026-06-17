@@ -1,5 +1,6 @@
 ---
-import { getImageSrcSet } from '../lib/urlFor';
+import { Image } from 'astro:assets';
+import { urlFor } from '../lib/urlFor';
 
 interface Props {
   src: any;
@@ -9,25 +10,32 @@ interface Props {
   sizes?: string;
   class?: string;
   loading?: "lazy" | "eager";
+  fetchpriority?: "high" | "low" | "auto";
 }
 
-const { src, alt, width, height, sizes = "100vw", class: className = "", loading = "lazy" } = Astro.props;
+const { src, alt, width, height, sizes = "100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
 
 if (!src) {
   return null;
 }
 
-const { src: mainUrl, srcset } = getImageSrcSet(src, width, height);
+// Extract original image URL from Sanity
+const mainUrl = urlFor(src).url();
+
+// Default widths if width isn't provided or requires responsivenes
+const widths = [150, 300, 450, 600, 750, 900, 1050, 1200];
 ---
 
-<img
+<Image
   src={mainUrl}
-  srcset={srcset}
-  sizes={sizes}
   alt={alt}
-  width={width}
-  height={height}
+  width={width || 800}
+  height={height || 600}
+  format="avif"
+  widths={widths}
+  sizes={sizes}
   class={className}
   loading={loading}
-  decoding="async"
+  decoding={loading === 'eager' ? 'sync' : 'async'}
+  fetchpriority={fetchpriority}
 />

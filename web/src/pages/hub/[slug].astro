@@ -7,7 +7,8 @@ import SanityImage from '../../components/SanityImage.astro';
 
 import { client } from '../../lib/sanity';
 import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY } from '../../lib/queries';
-import { getImageSrcSet } from '../../lib/urlFor';
+import { urlFor } from '../../lib/urlFor';
+import { getImage } from 'astro:assets';
 
 export async function getStaticPaths() {
   try {
@@ -51,13 +52,25 @@ let preloadDetails: any = null;
 let preloadSizes = "";
 
 if (cluster.coverImage) {
-  preloadDetails = getImageSrcSet(cluster.coverImage, 800, 400);
+  preloadDetails = await getImage({
+    src: urlFor(cluster.coverImage).url(),
+    width: 800,
+    height: 400,
+    format: 'avif',
+    widths: [400, 800, 1200]
+  });
   preloadSizes = "(min-width: 768px) 45vw, 100vw";
 } else if (recipes && recipes[0] && recipes[0].mainImage) {
   const firstRecipe = recipes[0];
   const aspect = firstRecipe.cardAspectRatio || 'tall';
   const h = aspect === 'standard' ? 300 : aspect === 'super-tall' ? 800 : 600;
-  preloadDetails = getImageSrcSet(firstRecipe.mainImage, 400, h);
+  preloadDetails = await getImage({
+    src: urlFor(firstRecipe.mainImage).url(),
+    width: 400,
+    height: h,
+    format: 'avif',
+    widths: [150, 300, 450, 600, 750]
+  });
   preloadSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
 }
 ---
@@ -65,7 +78,7 @@ if (cluster.coverImage) {
 <Layout 
   title={`${cluster.title} Recipes`} 
   description={cluster.description || `Browse our Pinterest-style collection of recipes inside the ${cluster.title} space.`}
-  image={cluster.coverImage ? cluster.coverImage.asset : undefined}
+  image={cluster.coverImage ? urlFor(cluster.coverImage).width(1200).height(630).format('jpg').url() : undefined}
 >
   {preloadDetails && (
     <link 
@@ -73,7 +86,7 @@ if (cluster.coverImage) {
       slot="head" 
       as="image" 
       href={preloadDetails.src} 
-      imagesrcset={preloadDetails.srcset} 
+      imagesrcset={preloadDetails.srcSet.attribute}  
       imagesizes={preloadSizes} 
       fetchpriority="high"
     />
