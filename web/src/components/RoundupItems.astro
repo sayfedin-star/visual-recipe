@@ -63,6 +63,7 @@ function getDomainName(urlStr?: string) {
                 height={375}
                 sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
                 class="roundup-image"
+                loading={index === 0 ? "eager" : "lazy"}
               />
             ) : (
               <div class="roundup-image-placeholder">🍳 No Image Available</div>

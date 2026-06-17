@@ -18,7 +18,12 @@ export const GET: APIRoute = async () => {
       season: recipe.season,
       parentCluster: recipe.parentCluster ? recipe.parentCluster.title : '',
       parentClusterSlug: recipe.parentCluster ? recipe.parentCluster.slug : '',
-      imageUrl: urlFor(recipe.mainImage).width(400).height(600).auto('format').url(),
+      imageUrl: urlFor(recipe.mainImage)
+        .width(400)
+        .height(recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600)
+        .auto('format')
+        .quality(80)
+        .url(),
       cardAspectRatio: recipe.cardAspectRatio || 'tall',
       publicationType: recipe.publicationType || 'single'
     }));

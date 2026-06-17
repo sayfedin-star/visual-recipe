@@ -16,9 +16,10 @@ interface Props {
     publicationType?: 'single' | 'roundup';
     jumpToRecipeAnchor?: string;
   };
+  loading?: 'lazy' | 'eager';
 }
 
-const { recipe } = Astro.props;
+const { recipe, loading = 'lazy' } = Astro.props;
 
 // Map the card aspect ratio options
 const aspectClasses = {
@@ -42,6 +43,7 @@ const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
         height={recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600}
         sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
         class="card-img"
+        loading={loading}
       />
       <!-- Hover Overlay -->
       <div class="hover-overlay">
