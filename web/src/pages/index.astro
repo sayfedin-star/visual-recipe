@@ -7,10 +7,11 @@ import Footer from '../components/Footer.astro';
 
 import { client } from '../lib/sanity';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
+import { getImageSrcSet } from '../lib/urlFor';
 
 // Fetch initial data at build-time (Static Generation)
-let recipes = [];
-let clusters = [];
+let recipes: any[] = [];
+let clusters: any[] = [];
 
 try {
   const [resRecipes, resClusters] = await Promise.all([
@@ -25,12 +26,34 @@ try {
 
 // Filter out categories that are sub-clusters to keep the top bar clean (or show all)
 const parentClusters = clusters.filter((c: any) => !c.parentCluster);
+
+// Preload the first recipe image in the feed (LCP element)
+const firstRecipe = recipes[0];
+let firstImagePreload: any = null;
+let firstImageSizes = "";
+if (firstRecipe && firstRecipe.mainImage) {
+  const aspect = firstRecipe.cardAspectRatio || 'tall';
+  const h = aspect === 'standard' ? 300 : aspect === 'super-tall' ? 800 : 600;
+  firstImagePreload = getImageSrcSet(firstRecipe.mainImage, 400, h);
+  firstImageSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
+}
 ---
 
 <Layout 
   title="Visual Recipe Discovery Platform" 
   description="Pinterest-styled feed of premium visual recipes. Browse, discover, and save your next delicious meal without friction."
 >
+  {firstImagePreload && (
+    <link 
+      rel="preload" 
+      slot="head" 
+      as="image" 
+      href={firstImagePreload.src} 
+      imagesrcset={firstImagePreload.srcset} 
+      imagesizes={firstImageSizes} 
+      fetchpriority="high"
+    />
+  )}
   <Header />
 
   <main class="main-content">

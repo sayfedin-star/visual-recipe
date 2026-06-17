@@ -7,6 +7,7 @@ import SanityImage from '../../components/SanityImage.astro';
 
 import { client } from '../../lib/sanity';
 import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY } from '../../lib/queries';
+import { getImageSrcSet } from '../../lib/urlFor';
 
 export async function getStaticPaths() {
   try {
@@ -44,6 +45,21 @@ const recipes = await client.fetch(RECIPES_BY_CLUSTER_QUERY, {
 const relatedHubs = allClusters
   .filter((c) => c._id !== cluster._id && (c.parentCluster?.slug === cluster.parentCluster?.slug || c.parentCluster?.slug === cluster.slug || cluster.parentCluster?.slug === c.slug))
   .slice(0, 4);
+
+// Preload calculation for LCP element
+let preloadDetails: any = null;
+let preloadSizes = "";
+
+if (cluster.coverImage) {
+  preloadDetails = getImageSrcSet(cluster.coverImage, 800, 400);
+  preloadSizes = "(min-width: 768px) 45vw, 100vw";
+} else if (recipes && recipes[0] && recipes[0].mainImage) {
+  const firstRecipe = recipes[0];
+  const aspect = firstRecipe.cardAspectRatio || 'tall';
+  const h = aspect === 'standard' ? 300 : aspect === 'super-tall' ? 800 : 600;
+  preloadDetails = getImageSrcSet(firstRecipe.mainImage, 400, h);
+  preloadSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
+}
 ---
 
 <Layout 
@@ -51,6 +67,17 @@ const relatedHubs = allClusters
   description={cluster.description || `Browse our Pinterest-style collection of recipes inside the ${cluster.title} space.`}
   image={cluster.coverImage ? cluster.coverImage.asset : undefined}
 >
+  {preloadDetails && (
+    <link 
+      rel="preload" 
+      slot="head" 
+      as="image" 
+      href={preloadDetails.src} 
+      imagesrcset={preloadDetails.srcset} 
+      imagesizes={preloadSizes} 
+      fetchpriority="high"
+    />
+  )}
   <Header />
 
   <!-- Hub Header Banner (Portrait/Large Cover Image split) -->

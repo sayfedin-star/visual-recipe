@@ -11,7 +11,7 @@ import RoundupItems from '../../components/RoundupItems.astro';
 import { portableTextToHtml } from '../../lib/portableText';
 
 import { client, getRecipeRating } from '../../lib/sanity';
-import { urlFor } from '../../lib/urlFor';
+import { urlFor, getImageSrcSet } from '../../lib/urlFor';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
 
 export async function getStaticPaths() {
@@ -122,6 +122,9 @@ if (recipe.publicationType === 'roundup') {
     }));
   }
 }
+
+const heroImagePreload = getImageSrcSet(recipe.mainImage, 600, 900);
+const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
 ---
 
 <Layout 
@@ -130,6 +133,15 @@ if (recipe.publicationType === 'roundup') {
   image={urlFor(recipe.mainImage).url().replace('https://cdn.sanity.io/images/', '/images/')}
   schema={recipeSchema}
 >
+  <link 
+    rel="preload" 
+    slot="head" 
+    as="image" 
+    href={heroImagePreload.src} 
+    imagesrcset={heroImagePreload.srcset} 
+    imagesizes={heroImageSizes} 
+    fetchpriority="high"
+  />
   <Header />
 
   <main class="recipe-detail-main">

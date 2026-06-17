@@ -1,5 +1,5 @@
 ---
-import { urlFor } from '../lib/urlFor';
+import { getImageSrcSet } from '../lib/urlFor';
 
 interface Props {
   src: any;
@@ -17,32 +17,7 @@ if (!src) {
   return null;
 }
 
-// Generate the optimized URLs using Sanity image pipeline
-let imageUrl = urlFor(src).auto('format').quality(70);
-
-if (width) {
-  imageUrl = imageUrl.width(width);
-}
-if (height) {
-  imageUrl = imageUrl.height(height);
-}
-
-const mainUrl = imageUrl.url().replace('https://cdn.sanity.io/images/', '/images/');
-
-// Generate responsive srcsets for better performance
-const widths = [150, 300, 350, 400, 450, 500, 600, 750, 900, 1050, 1200];
-const srcset = widths
-  .map((w) => {
-    let urlBuilder = urlFor(src).auto('format').quality(70).width(w);
-    if (height && width) {
-      // Keep aspect ratio
-      const calculatedHeight = Math.round((w / width) * height);
-      urlBuilder = urlBuilder.height(calculatedHeight);
-    }
-    const url = urlBuilder.url().replace('https://cdn.sanity.io/images/', '/images/');
-    return `${url} ${w}w`;
-  })
-  .join(', ');
+const { src: mainUrl, srcset } = getImageSrcSet(src, width, height);
 ---
 
 <img
