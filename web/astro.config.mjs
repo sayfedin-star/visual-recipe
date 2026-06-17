@@ -6,5 +6,8 @@ export default defineConfig({
   output: 'hybrid',
   adapter: cloudflare({
     imageService: 'passthrough'
-  })
+  }),
+  build: {
+    inlineStylesheets: 'always'
+  }
 });
