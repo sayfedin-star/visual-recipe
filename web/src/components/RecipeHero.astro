@@ -94,13 +94,11 @@ const ratingInfo = getRecipeRating(recipeId);
         <div class="cta-actions">
           <a href={`#${jumpToRecipeAnchor}`} class="jump-cta-btn">
             <span>{isRoundup ? 'View Round-Up' : 'Jump to Recipe'}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 animate-bounce">
-              <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
-            </svg>
+            <span class="cta-arrow">&darr;</span>
           </a>
           <!-- Pinterest Save button next to CTA -->
           <button class="save-cta-btn" data-save-btn>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 save-icon">
               <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
             </svg>
             <span class="save-label">{isRoundup ? 'Save Round-Up' : 'Save Recipe'}</span>
@@ -156,22 +154,26 @@ const ratingInfo = getRecipeRating(recipeId);
   }
 
   .hero-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .hero-image-container {
+    width: 100%;
+    order: 2; /* Image goes below metadata on mobile */
   }
 
   @media (min-width: 768px) {
     .hero-grid {
+      display: grid;
       grid-template-columns: 1.2fr 1.5fr;
       gap: 3rem;
+      align-items: start;
     }
-  }
-
-  /* Image container */
-  .hero-image-container {
-    width: 100%;
+    .hero-image-container {
+      order: initial;
+    }
   }
 
   .hero-image-link {
@@ -228,6 +230,13 @@ const ratingInfo = getRecipeRating(recipeId);
   /* Metadata Panel */
   .hero-meta-container {
     padding: 1rem 0;
+    order: 1; /* Metadata goes above image on mobile */
+  }
+
+  @media (min-width: 768px) {
+    .hero-meta-container {
+      order: initial;
+    }
   }
 
   .recipe-title {
@@ -252,68 +261,78 @@ const ratingInfo = getRecipeRating(recipeId);
     margin-bottom: 2rem;
   }
 
-  /* CTA actions */
+  /* CTA actions - Pinterest style side-by-side pill buttons */
   .cta-actions {
     display: flex;
     gap: 0.75rem;
     align-items: center;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
   }
 
   .save-cta-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    background-color: var(--color-surface);
-    color: var(--color-text);
+    background-color: #efefef;
+    color: #111111;
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.05rem;
-    padding: 0.9rem 1.8rem;
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    padding: 0.85rem 1.75rem;
+    border: none;
+    border-radius: 9999px;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s, transform 0.2s, color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
   }
 
   .save-cta-btn:hover {
-    background-color: var(--color-border);
-    transform: translateY(-2px);
+    background-color: #e2e2e2;
   }
 
   .save-cta-btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
 
   .save-cta-btn.saved {
     background-color: var(--color-primary);
     color: #ffffff;
-    border-color: var(--color-primary);
+  }
+
+  .save-icon {
+    width: 18px;
+    height: 18px;
   }
 
   .jump-cta-btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
-    background-color: var(--color-primary);
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #e60023; /* Pinterest Red */
     color: #ffffff;
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1.05rem;
-    padding: 0.9rem 2rem;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    font-size: 1rem;
+    padding: 0.85rem 1.75rem;
+    border-radius: 9999px;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
   }
 
   .jump-cta-btn:hover {
-    background-color: var(--color-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    background-color: #ad001a;
   }
 
   .jump-cta-btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
+  }
+
+  .cta-arrow {
+    font-size: 1.2rem;
+    line-height: 1;
+    font-weight: 800;
   }
 
   /* Badges */
