@@ -22,8 +22,9 @@ if (!src) {
 // Extract original image URL from Sanity
 const mainUrl = urlFor(src).url();
 
-// Default widths if width isn't provided or requires responsivenes
-const widths = [150, 300, 450, 600, 750, 900, 1050, 1200];
+// Differentiate between LCP hero and non-critical images for widths
+const isHero = loading === 'eager' || fetchpriority === 'high';
+const widths = isHero ? [360, 540, 720, 900] : [200, 400, 600];
 ---
 
 <Image
@@ -36,6 +37,7 @@ const widths = [150, 300, 450, 600, 750, 900, 1050, 1200];
   sizes={sizes}
   class={className}
   loading={loading}
-  decoding={loading === 'eager' ? 'sync' : 'async'}
+  decoding="async"
   fetchpriority={fetchpriority}
+  quality={65}
 />

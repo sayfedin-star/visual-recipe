@@ -16,6 +16,8 @@ export function urlFor(source: any) {
     return mockBuilder;
   }
   try {
+    // Returns the builder instance. Callers can customize (e.g., for OG images),
+    // but default uses the raw CDN url to avoid double-transformation when passed to Astro's <Image>.
     return builder.image(source);
   } catch (e) {
     return mockBuilder;

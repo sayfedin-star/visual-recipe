@@ -11,7 +11,7 @@ import RoundupItems from '../../components/RoundupItems.astro';
 import { portableTextToHtml } from '../../lib/portableText';
 
 import { client, getRecipeRating } from '../../lib/sanity';
-import { urlFor, getImageSrcSet } from '../../lib/urlFor';
+import { urlFor } from '../../lib/urlFor';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
 
 export async function getStaticPaths() {
@@ -132,7 +132,8 @@ const heroImagePreload = await getImage({
   width: 600,
   height: 900,
   format: 'avif',
-  widths: [150, 300, 450, 600, 750, 900, 1050, 1200]
+  widths: [360, 540, 720, 900],
+  quality: 65
 });
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
 ---
