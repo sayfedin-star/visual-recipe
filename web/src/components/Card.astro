@@ -35,7 +35,7 @@ const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
 <article class="recipe-card group" data-recipe-id={recipe._id}>
   <!-- Card image container -->
   <div class={`image-container ${aspectClass}`}>
-    <a href={`/recipe/${recipe.slug}#${jumpAnchor}`} class="image-link" aria-label={`View recipe instructions for ${recipe.title}`}>
+    <a href={`/recipe/${recipe.slug}`} class="image-link" aria-label={`View recipe instructions for ${recipe.title}`}>
       <!-- sizes prop maps to the 4/3/2 column masonry layout widths -->
       <SanityImage
         src={recipe.mainImage}
@@ -74,7 +74,7 @@ const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
 
   <!-- Content Block -->
   <div class="card-details">
-    <a href={`/recipe/${recipe.slug}#${jumpAnchor}`} class="title-link">
+    <a href={`/recipe/${recipe.slug}`} class="title-link">
       <h3 class="card-title">{recipe.title}</h3>
     </a>
     <p class="card-excerpt">{recipe.excerpt}</p>

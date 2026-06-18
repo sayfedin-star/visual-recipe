@@ -213,7 +213,7 @@ try {
       const aspectClass = aspectClasses[recipe.cardAspectRatio] || 'aspect-[2/3]';
       imgContainer.className = `image-container ${aspectClass}`;
 
-      imgLink.href = `/recipe/${recipe.slug}#recipe-card`;
+      imgLink.href = `/recipe/${recipe.slug}`;
       imgLink.ariaLabel = `View recipe instructions for ${recipe.title}`;
       img.src = recipe.imageUrl;
       img.alt = recipe.title;
@@ -226,7 +226,7 @@ try {
         categoryBadge.style.display = 'none';
       }
 
-      titleLink.href = `/recipe/${recipe.slug}#recipe-card`;
+      titleLink.href = `/recipe/${recipe.slug}`;
       title.textContent = recipe.title;
       excerpt.textContent = recipe.excerpt;
 

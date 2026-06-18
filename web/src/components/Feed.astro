@@ -122,7 +122,7 @@ const { recipes = [], initialCount = 12 } = Astro.props;
       return `
         <article class="recipe-card" data-recipe-id="${r._id}">
           <div class="image-container ${aspect}">
-            <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="image-link"
+            <a href="/recipe/${r.slug}" class="image-link"
                aria-label="View recipe instructions for ${r.title}">
               <img src="${imgSrc}" srcset="${imgSrcSet}" sizes="${sizes}" alt="${r.title}" width="400" height="600"
                    loading="lazy" decoding="async" class="card-img" />
@@ -133,7 +133,7 @@ const { recipes = [], initialCount = 12 } = Astro.props;
             ${clusterBadge}${roundupBadge}
           </div>
           <div class="card-details">
-            <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="title-link">
+            <a href="/recipe/${r.slug}" class="title-link">
               <h3 class="card-title">${r.title}</h3>
             </a>
             <p class="card-excerpt">${r.excerpt || ''}</p>
