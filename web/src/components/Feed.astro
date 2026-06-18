@@ -133,7 +133,7 @@ const { recipes = [], initialCount = 12 } = Astro.props;
             ${clusterBadge}${roundupBadge}
           </div>
           <div class="card-details">
-            <a href="/recipe/${r.slug}" class="title-link">
+            <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="title-link">
               <h3 class="card-title">${r.title}</h3>
             </a>
             <p class="card-excerpt">${r.excerpt || ''}</p>

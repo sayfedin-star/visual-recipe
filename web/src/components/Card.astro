@@ -74,7 +74,7 @@ const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
 
   <!-- Content Block -->
   <div class="card-details">
-    <a href={`/recipe/${recipe.slug}`} class="title-link">
+    <a href={`/recipe/${recipe.slug}#${jumpAnchor}`} class="title-link">
       <h3 class="card-title">{recipe.title}</h3>
     </a>
     <p class="card-excerpt">{recipe.excerpt}</p>
