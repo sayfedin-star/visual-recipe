@@ -13,7 +13,7 @@ interface Props {
   fetchpriority?: "high" | "low" | "auto";
 }
 
-const { src, alt, width, height, sizes = "100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
+const { src, alt, width, height, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
 
 if (!src) {
   return null;
@@ -23,7 +23,7 @@ if (!src) {
 const mainUrl = urlFor(src).url();
 
 // Differentiate between LCP hero and non-critical images for widths
-const isHero = loading === 'eager' || fetchpriority === 'high';
+const isHero = fetchpriority === 'high';
 const widths = isHero ? [360, 540, 720, 900] : [200, 400, 600];
 ---
 

@@ -129,8 +129,8 @@ const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').u
 import { getImage } from 'astro:assets';
 const heroImagePreload = await getImage({
   src: heroImageRawUrl,
-  width: 600,
-  height: 900,
+  width: 900,
+  height: 1350,
   format: 'avif',
   widths: [360, 540, 720, 900],
   quality: 65

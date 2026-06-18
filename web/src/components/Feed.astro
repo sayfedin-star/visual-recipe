@@ -37,7 +37,7 @@ const { recipes = [], initialCount = 12 } = Astro.props;
             data-cluster={recipe.parentCluster?.slug}
             data-badges={recipe.badges?.join(' ')}
           >
-            <Card recipe={recipe} loading={index < 4 ? "eager" : "lazy"} />
+            <Card recipe={recipe} loading="lazy" />
           </div>
         ))}
       </div>
@@ -61,7 +61,6 @@ const { recipes = [], initialCount = 12 } = Astro.props;
                 ? r.mainImage.asset._ref
                     .replace('image-', '')
                     .replace(/-(\w+)$/, '.$1')
-                    .replace(/-(\d+x\d+)-/, '/$1/')
                 : null
             }))
           )}
@@ -100,9 +99,16 @@ const { recipes = [], initialCount = 12 } = Astro.props;
 
     function buildCardHTML(r: any): string {
       const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
-      const imgSrc = r.imageUrl
-        ? `/images/production/${r.imageUrl}?w=400&auto=format&q=70`
+      const baseImgUrl = r.imageUrl
+        ? `https://cdn.sanity.io/images/k8dfrtog/production/${r.imageUrl}`
         : '/favicon.svg';
+      const imgSrc = r.imageUrl
+        ? `${baseImgUrl}?w=400&q=65&auto=format`
+        : '/favicon.svg';
+      const imgSrcSet = r.imageUrl
+        ? `${baseImgUrl}?w=200&q=65&auto=format 200w, ${baseImgUrl}?w=400&q=65&auto=format 400w, ${baseImgUrl}?w=600&q=65&auto=format 600w`
+        : '';
+      const sizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
       const clusterBadge = r.parentCluster
         ? `<a href="/hub/${r.parentCluster.slug}" class="category-badge">${r.parentCluster.title}</a>`
         : '';
@@ -118,7 +124,7 @@ const { recipes = [], initialCount = 12 } = Astro.props;
           <div class="image-container ${aspect}">
             <a href="/recipe/${r.slug}#${r.jumpToRecipeAnchor}" class="image-link"
                aria-label="View recipe instructions for ${r.title}">
-              <img src="${imgSrc}" alt="${r.title}" width="400" height="600"
+              <img src="${imgSrc}" srcset="${imgSrcSet}" sizes="${sizes}" alt="${r.title}" width="400" height="600"
                    loading="lazy" decoding="async" class="card-img" />
               <div class="hover-overlay">
                 <span class="view-btn">View Recipe</span>
