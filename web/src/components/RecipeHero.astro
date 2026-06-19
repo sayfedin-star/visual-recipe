@@ -37,27 +37,6 @@ const ratingInfo = getRecipeRating(recipeId);
 
 <section class="recipe-hero-section" data-recipe-id={recipeId}>
   <div class="hero-grid">
-    <!-- Clickable Large Portrait Hero Image -->
-    <div class="hero-image-container">
-      <a href={`#${jumpToRecipeAnchor}`} class="hero-image-link" aria-label={isRoundup ? "Jump directly to the round-up items" : "Jump directly to recipe card instructions"}>
-        <div class="image-wrapper">
-          <SanityImage
-            src={mainImage}
-            alt={mainImage?.alt || title}
-            width={600}
-            height={900}
-            sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
-            class="hero-img"
-            loading="eager"
-            fetchpriority="high"
-          />
-          <div class="image-overlay">
-            <span class="jump-label">{isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe'}</span>
-          </div>
-        </div>
-      </a>
-    </div>
-
     <!-- Metadata Panel -->
     <div class="hero-meta-container">
       <div class="meta-content">
@@ -95,7 +74,9 @@ const ratingInfo = getRecipeRating(recipeId);
         <div class="cta-actions">
           <a href={`#${jumpToRecipeAnchor}`} class="jump-cta-btn">
             <span>{isRoundup ? 'View Round-Up' : 'Jump to Recipe'}</span>
-            <span class="cta-arrow">&darr;</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="cta-arrow">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+            </svg>
           </a>
           <!-- Pinterest Save button next to CTA -->
           <button class="save-cta-btn" data-save-btn>
@@ -146,6 +127,27 @@ const ratingInfo = getRecipeRating(recipeId);
         )}
       </div>
     </div>
+
+    <!-- Clickable Large Portrait Hero Image -->
+    <div class="hero-image-container">
+      <a href={`#${jumpToRecipeAnchor}`} class="hero-image-link" aria-label={isRoundup ? "Jump directly to the round-up items" : "Jump directly to recipe card instructions"}>
+        <div class="image-wrapper">
+          <SanityImage
+            src={mainImage}
+            alt={mainImage?.alt || title}
+            width={600}
+            height={900}
+            sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
+            class="hero-img"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <div class="image-overlay">
+            <span class="jump-label">{isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe'}</span>
+          </div>
+        </div>
+      </a>
+    </div>
   </div>
 </section>
 
@@ -162,7 +164,6 @@ const ratingInfo = getRecipeRating(recipeId);
 
   .hero-image-container {
     width: 100%;
-    order: 2; /* Image goes below metadata on mobile */
   }
 
   @media (min-width: 768px) {
@@ -173,7 +174,8 @@ const ratingInfo = getRecipeRating(recipeId);
       align-items: start;
     }
     .hero-image-container {
-      order: initial;
+      grid-column: 1;
+      grid-row: 1;
     }
   }
 
@@ -231,12 +233,12 @@ const ratingInfo = getRecipeRating(recipeId);
   /* Metadata Panel */
   .hero-meta-container {
     padding: 1rem 0;
-    order: 1; /* Metadata goes above image on mobile */
   }
 
   @media (min-width: 768px) {
     .hero-meta-container {
-      order: initial;
+      grid-column: 2;
+      grid-row: 1;
     }
   }
 
@@ -331,9 +333,10 @@ const ratingInfo = getRecipeRating(recipeId);
   }
 
   .cta-arrow {
-    font-size: 1.2rem;
-    line-height: 1;
-    font-weight: 800;
+    width: 1.1rem;
+    height: 1.1rem;
+    display: inline-block;
+    vertical-align: middle;
   }
 
   /* Badges */

@@ -328,7 +328,11 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
   });
 
   // Load index on load
-  document.addEventListener('DOMContentLoaded', loadIndex);
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('client-search-input')) {
+      loadIndex();
+    }
+  });
 </script>
 
 <style>

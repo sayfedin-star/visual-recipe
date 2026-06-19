@@ -245,7 +245,11 @@ try {
     });
   }
 
-  document.addEventListener('DOMContentLoaded', loadSavedBoard);
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('saved-feed')) {
+      loadSavedBoard();
+    }
+  });
 </script>
 
 <style>

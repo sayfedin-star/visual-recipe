@@ -16,7 +16,7 @@ export default defineConfig({
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('astro') && id.includes('type=script') && !/[\/\\]pages[\/\\]/.test(id)) {
+            if (id.includes('astro') && id.includes('type=script')) {
               return 'hoisted';
             }
           }
