@@ -65,7 +65,8 @@ export const RECIPE_BY_SLUG_QUERY = groq`
       title,
       description,
       image,
-      externalUrl
+      externalUrl,
+      customCta
     },
     parentCluster->{ _id, title, "slug": slug.current },
     subCluster->{ _id, title, "slug": slug.current },

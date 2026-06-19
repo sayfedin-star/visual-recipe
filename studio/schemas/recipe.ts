@@ -93,6 +93,12 @@ export default defineType({
               type: 'url',
               description: 'Link directly to an external website instead of the internal detail page.',
             }),
+            defineField({
+              name: 'customCta',
+              title: 'Custom CTA Label',
+              type: 'string',
+              description: 'Optional override for the CTA button (defaults to "MAKE THIS RECIPE")',
+            }),
           ],
           preview: {
             select: {

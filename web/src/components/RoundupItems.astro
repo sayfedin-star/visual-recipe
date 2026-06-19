@@ -17,6 +17,7 @@ interface Props {
     description: string;
     image?: any;
     externalUrl?: string;
+    customCta?: string;
   }>;
 }
 
@@ -31,6 +32,21 @@ function getDomainName(urlStr?: string) {
   } catch {
     return 'Website';
   }
+}
+
+// Deterministic mock rating generator based on title seed
+function getDeterministicRating(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const absHash = Math.abs(hash);
+  // Average rating between 4.5 and 5.0 (steps of 0.1)
+  const ratingVal = 4.5 + (absHash % 6) * 0.1;
+  const rating = ratingVal === 5.0 ? "5" : ratingVal.toFixed(1);
+  const reviews = 15 + (absHash % 285); // 15 to 299 reviews
+  return { rating, reviews };
 }
 ---
 
@@ -49,6 +65,9 @@ function getDomainName(urlStr?: string) {
     const badges = item.recipe?.badges || [];
     const prepTime = item.recipe?.prepTime;
     const cookTime = item.recipe?.cookTime;
+
+    // Get deterministic rating info
+    const { rating, reviews } = getDeterministicRating(itemTitle);
 
     return (
       <article class={`roundup-item ${isEven ? 'even' : 'odd'}`}>
@@ -80,7 +99,7 @@ function getDomainName(urlStr?: string) {
         <!-- Item Content Details -->
         <div class="roundup-info-wrapper">
           <div class="roundup-header">
-            <span class="item-number">{(index + 1).toString().padStart(2, '0')}</span>
+            <span class="item-number">{index + 1}</span>
             <h3 class="item-title">
               <a href={targetUrl} target={isExternal ? "_blank" : "_self"} rel={isExternal ? "noopener noreferrer" : ""}>
                 {itemTitle}
@@ -104,25 +123,20 @@ function getDomainName(urlStr?: string) {
 
           <p class="item-description">{item.description}</p>
 
+          <!-- Ratings Section -->
+          <div class="rating-container">
+            <div class="stars">★ ★ ★ ★ ★</div>
+            <div class="rating-text">{reviews} REVIEWS / {rating} AVERAGE</div>
+          </div>
+
           <!-- Action Button -->
           <a 
             href={targetUrl} 
-            class={`cta-button ${isExternal ? 'external-btn' : 'internal-btn'}`}
+            class="cta-button"
             target={isExternal ? "_blank" : "_self"}
             rel={isExternal ? "noopener noreferrer" : ""}
           >
-            {isExternal ? (
-              <>
-                Get Recipe on {domainName}
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 ml-1">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                </svg>
-              </>
-            ) : (
-              <>
-                View Full Recipe details &rarr;
-              </>
-            )}
+            {item.customCta || 'MAKE THIS RECIPE'}
           </a>
         </div>
       </article>
@@ -252,12 +266,20 @@ function getDomainName(urlStr?: string) {
   }
 
   .item-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: #eab308; /* Yellow/Gold */
+    color: #ffffff;
     font-family: var(--font-heading);
-    font-size: 2.25rem;
-    font-weight: 900;
-    color: var(--color-primary);
+    font-size: 1.15rem;
+    font-weight: 800;
+    flex-shrink: 0;
     line-height: 1;
-    opacity: 0.85;
+    margin-top: 0.1rem;
   }
 
   .item-title {
@@ -306,6 +328,29 @@ function getDomainName(urlStr?: string) {
     line-height: 1.6;
   }
 
+  /* Ratings Section */
+  .rating-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0.5rem 0;
+  }
+
+  .stars {
+    color: #f59e0b; /* Amber/gold */
+    font-size: 1.15rem;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+
+  .rating-text {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+  }
+
   /* Buttons styling */
   .cta-button {
     align-self: flex-start;
@@ -315,37 +360,24 @@ function getDomainName(urlStr?: string) {
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 0.9rem;
-    padding: 0.65rem 1.25rem;
-    border-radius: var(--radius-lg);
-    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    letter-spacing: 0.05em;
+    padding: 0.8rem 1.75rem;
+    border-radius: 4px;
+    background-color: #6c3057; /* Plum/Burgundy matching mockup */
+    color: #ffffff;
+    border: none;
+    text-transform: uppercase;
+    transition: background-color 0.2s, transform 0.2s;
     margin-top: 0.5rem;
     cursor: pointer;
   }
 
-  .internal-btn {
-    background-color: var(--color-text);
-    color: #ffffff;
-  }
-
-  .internal-btn:hover {
-    background-color: var(--color-primary);
-    transform: translateX(4px);
-  }
-
-  .external-btn {
-    background-color: var(--color-surface);
-    color: var(--color-text);
-    border: 1.5px solid var(--color-border);
-  }
-
-  .external-btn:hover {
-    background-color: #ffffff;
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+  .cta-button:hover {
+    background-color: #552544;
     transform: translateY(-2px);
   }
 
-  .ml-1 {
-    margin-left: 0.25rem;
+  .cta-button:active {
+    transform: translateY(0);
   }
 </style>
