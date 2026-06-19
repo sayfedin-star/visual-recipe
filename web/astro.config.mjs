@@ -10,5 +10,18 @@ export default defineConfig({
   },
   build: {
     inlineStylesheets: 'always'
+  },
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('astro') && id.includes('type=script')) {
+              return 'hoisted';
+            }
+          }
+        }
+      }
+    }
   }
 });
