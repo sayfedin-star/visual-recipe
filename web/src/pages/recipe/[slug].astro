@@ -141,8 +141,8 @@ if (!recipe.hideMainImage) {
   const heroImageRawUrl = urlFor(recipe.mainImage).url();
   heroImagePreload = await getImage({
     src: heroImageRawUrl,
-    width: 900,
-    height: 1350,
+    width: 600,
+    height: 900,
     format: 'avif',
     widths: [360, 540, 720, 900],
     quality: 65

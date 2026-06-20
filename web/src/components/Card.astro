@@ -17,9 +17,10 @@ interface Props {
     jumpToRecipeAnchor?: string;
   };
   loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
 }
 
-const { recipe, loading = 'lazy' } = Astro.props;
+const { recipe, loading = 'lazy', fetchpriority } = Astro.props;
 
 // Map the card aspect ratio options
 const aspectClasses = {
@@ -45,6 +46,7 @@ const jumpAnchor = recipe.jumpToRecipeAnchor || 'recipe-card';
         sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
         class="card-img"
         loading={loading}
+        fetchpriority={fetchpriority}
       />
       <!-- Hover Overlay -->
       <div class="hover-overlay">

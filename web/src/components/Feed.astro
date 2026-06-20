@@ -37,7 +37,11 @@ const { recipes = [], initialCount = 12 } = Astro.props;
             data-cluster={recipe.parentCluster?.slug}
             data-badges={recipe.badges?.join(' ')}
           >
-            <Card recipe={recipe} loading="lazy" />
+            <Card 
+              recipe={recipe} 
+              loading={index === 0 ? 'eager' : 'lazy'} 
+              fetchpriority={index === 0 ? 'high' : undefined}
+            />
           </div>
         ))}
       </div>

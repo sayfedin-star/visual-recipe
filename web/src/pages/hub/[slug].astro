@@ -71,7 +71,7 @@ if (cluster.coverImage) {
     width: 400,
     height: h,
     format: 'avif',
-    widths: [150, 300, 450, 600, 750]
+    widths: [360, 540, 720, 900]
   });
   preloadSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
 }
@@ -108,6 +108,7 @@ if (cluster.coverImage) {
             sizes="(min-width: 768px) 45vw, 100vw"
             class="hub-cover-img"
             loading="eager"
+            fetchpriority="high"
           />
         </div>
       )}
