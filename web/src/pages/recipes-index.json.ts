@@ -1,11 +1,11 @@
 import type { APIRoute } from 'astro';
 import { client } from '../lib/sanity';
-import { ALL_RECIPES_QUERY } from '../lib/queries';
+import { SEARCH_INDEX_QUERY } from '../lib/queries';
 import { urlFor } from '../lib/urlFor';
 
 export const GET: APIRoute = async () => {
   try {
-    const recipes = await client.fetch(ALL_RECIPES_QUERY);
+    const recipes = await client.fetch(SEARCH_INDEX_QUERY);
     
     // Transform or select exactly what the search client needs to minimize bundle size
     const searchData = recipes.map((recipe: any) => ({

@@ -12,11 +12,11 @@ import { portableTextToHtml } from '../../lib/portableText';
 
 import { client, getRecipeRating } from '../../lib/sanity';
 import { urlFor } from '../../lib/urlFor';
-import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
+import { RECIPE_SLUGS_QUERY, ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
 
 export async function getStaticPaths() {
   try {
-    const recipes = await client.fetch(ALL_RECIPES_QUERY);
+    const recipes = await client.fetch(RECIPE_SLUGS_QUERY);
     const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
     
     return recipes.map((recipe: any) => ({

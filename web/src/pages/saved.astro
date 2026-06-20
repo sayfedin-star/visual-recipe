@@ -50,7 +50,7 @@ try {
       <!-- Card image container -->
       <div class="image-container">
         <a href="" class="image-link">
-          <img src="" alt="" class="card-img" />
+          <img src="" alt="" class="card-img" loading="lazy" decoding="async" />
           <!-- Hover Overlay -->
           <div class="hover-overlay">
             <span class="view-btn">View Recipe</span>
@@ -218,6 +218,14 @@ try {
       img.src = recipe.imageUrl;
       img.alt = recipe.title;
       img.setAttribute('sizes', '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw');
+
+      const aspectHeights = {
+        standard: 300,
+        tall: 600,
+        'super-tall': 800
+      };
+      img.width = 400;
+      img.height = aspectHeights[recipe.cardAspectRatio] || 600;
 
       if (recipe.parentCluster) {
         categoryBadge.href = `/hub/${recipe.parentClusterSlug}`;

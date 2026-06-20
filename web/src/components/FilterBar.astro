@@ -65,11 +65,11 @@ const {
   const pills = document.querySelectorAll('[data-filter-type="cluster"]');
   const seasonSelect = document.getElementById('season-filter') as HTMLSelectElement;
   const badgeSelect = document.getElementById('badge-filter') as HTMLSelectElement;
-  const feedItems = document.querySelectorAll('[data-feed-item]') as NodeListOf<HTMLElement>;
   const loadMoreBtn = document.getElementById('load-more-btn');
   const loadMoreContainer = document.getElementById('load-more-container') as HTMLElement;
 
   function applyFilters() {
+    const feedItems = document.querySelectorAll('[data-feed-item]') as NodeListOf<HTMLElement>;
     let visibleCount = 0;
     
     feedItems.forEach((item) => {

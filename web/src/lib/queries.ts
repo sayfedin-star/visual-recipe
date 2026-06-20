@@ -159,3 +159,27 @@ export const AUTO_RELATED_RECIPES_QUERY = groq`
     jumpToRecipeAnchor
   }
 `;
+
+// Fetch only recipe slugs for fast getStaticPaths generation
+export const RECIPE_SLUGS_QUERY = groq`
+  *[_type == "recipe"] {
+    "slug": slug.current
+  }
+`;
+
+// Fetch minimal fields for client-side search index generation
+export const SEARCH_INDEX_QUERY = groq`
+  *[_type == "recipe"] {
+    _id,
+    title,
+    "slug": slug.current,
+    excerpt,
+    mainImage,
+    cardAspectRatio,
+    badges,
+    intentTags,
+    season,
+    "publicationType": coalesce(publicationType, "single"),
+    parentCluster->{ title, "slug": slug.current }
+  }
+`;

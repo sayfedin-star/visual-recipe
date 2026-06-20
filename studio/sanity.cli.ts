@@ -4,5 +4,6 @@ export default defineCliConfig({
   api: {
     projectId: 'k8dfrtog',
     dataset: 'production'
-  }
+  },
+  studioHost: 'visual-recipe'
 });

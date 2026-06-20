@@ -95,7 +95,7 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
       <!-- Card image container -->
       <div class="image-container">
         <a href="" class="image-link">
-          <img src="" alt="" class="card-img" />
+          <img src="" alt="" class="card-img" loading="lazy" decoding="async" />
           <!-- Hover Overlay -->
           <div class="hover-overlay">
             <span class="view-btn">View Recipe</span>
@@ -262,6 +262,14 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
       img.alt = recipe.title;
       img.setAttribute('sizes', '(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw');
 
+      const aspectHeights = {
+        standard: 300,
+        tall: 600,
+        'super-tall': 800
+      };
+      img.width = 400;
+      img.height = aspectHeights[recipe.cardAspectRatio] || 600;
+
       if (recipe.parentCluster) {
         categoryBadge.href = `/hub/${recipe.parentClusterSlug}`;
         categoryBadge.textContent = recipe.parentCluster;
@@ -294,6 +302,7 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
   }
 
   // Bind Listeners
+  let debounceTimer: any;
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       // Update URL without reloading page
@@ -306,7 +315,10 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({ path: newUrl }, '', newUrl);
 
-      filterAndRender();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        filterAndRender();
+      }, 150);
     });
   }
 
