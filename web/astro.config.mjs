@@ -1,10 +1,8 @@
 import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
   site: 'https://nremi.com',
-  output: 'hybrid',
-  adapter: cloudflare(),
+  output: 'static',
   image: {
     domains: ['cdn.sanity.io'],
   },
