@@ -10,7 +10,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^11.0.0",
     "@sanity/client": "^6.15.2",
     "@sanity/image-url": "^1.0.2",
     "astro": "^4.5.0",
