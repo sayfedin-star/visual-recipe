@@ -6,6 +6,8 @@ interface Props {
   title: string;
   excerpt: string;
   mainImage: any;
+  hideMainImage?: boolean;
+  customCtaUrl?: string;
   prepTime?: number;
   cookTime?: number;
   servings?: number;
@@ -20,6 +22,8 @@ const {
   title, 
   excerpt, 
   mainImage, 
+  hideMainImage = false,
+  customCtaUrl,
   prepTime, 
   cookTime, 
   servings, 
@@ -33,10 +37,23 @@ const {
 const totalTime = (prepTime || 0) + (cookTime || 0);
 const finalBadges = badges || [];
 const ratingInfo = getRecipeRating(recipeId);
+
+// Determine if link is external to configure target/rel properties
+const isExternal = (url: string) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname !== 'nremi.com' && urlObj.hostname !== 'www.nremi.com' && !urlObj.hostname.includes('localhost');
+  } catch (e) {
+    return false;
+  }
+};
+
+const ctaHref = customCtaUrl || `#${jumpToRecipeAnchor}`;
+const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
 ---
 
 <section class="recipe-hero-section" data-recipe-id={recipeId}>
-  <div class="hero-grid">
+  <div class={`hero-grid ${hideMainImage ? 'no-image' : ''}`}>
     <!-- Metadata Panel -->
     <div class="hero-meta-container">
       <div class="meta-content">
@@ -72,11 +89,22 @@ const ratingInfo = getRecipeRating(recipeId);
 
         <!-- Sticky Jump to Recipe Button -->
         <div class="cta-actions">
-          <a href={`#${jumpToRecipeAnchor}`} class="jump-cta-btn">
+          <a 
+            href={ctaHref} 
+            class="jump-cta-btn"
+            target={isCtaExternal ? "_blank" : undefined}
+            rel={isCtaExternal ? "noopener noreferrer" : undefined}
+          >
             <span>{isRoundup ? 'View Round-Up' : 'Jump to Recipe'}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="cta-arrow">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
-            </svg>
+            {customCtaUrl ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="cta-arrow">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="cta-arrow">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" />
+              </svg>
+            )}
           </a>
           <!-- Pinterest Save button next to CTA -->
           <button class="save-cta-btn" data-save-btn>
@@ -129,25 +157,35 @@ const ratingInfo = getRecipeRating(recipeId);
     </div>
 
     <!-- Clickable Large Portrait Hero Image -->
-    <div class="hero-image-container">
-      <a href={`#${jumpToRecipeAnchor}`} class="hero-image-link" aria-label={isRoundup ? "Jump directly to the round-up items" : "Jump directly to recipe card instructions"}>
-        <div class="image-wrapper">
-          <SanityImage
-            src={mainImage}
-            alt={mainImage?.alt || title}
-            width={600}
-            height={900}
-            sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
-            class="hero-img"
-            loading="eager"
-            fetchpriority="high"
-          />
-          <div class="image-overlay">
-            <span class="jump-label">{isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe'}</span>
+    {!hideMainImage && (
+      <div class="hero-image-container">
+        <a 
+          href={ctaHref} 
+          class="hero-image-link" 
+          target={isCtaExternal ? "_blank" : undefined}
+          rel={isCtaExternal ? "noopener noreferrer" : undefined}
+          aria-label={customCtaUrl ? `Open link: ${title}` : (isRoundup ? "Jump directly to the round-up items" : "Jump directly to recipe card instructions")}
+        >
+          <div class="image-wrapper">
+            <SanityImage
+              src={mainImage}
+              alt={mainImage?.alt || title}
+              width={600}
+              height={900}
+              sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
+              class="hero-img"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <div class="image-overlay">
+              <span class="jump-label">
+                {customCtaUrl ? 'Click to View Link' : (isRoundup ? 'Click to View Round-Up' : 'Click to Jump to Recipe')}
+              </span>
+            </div>
           </div>
-        </div>
-      </a>
-    </div>
+        </a>
+      </div>
+    )}
   </div>
 </section>
 
@@ -167,15 +205,23 @@ const ratingInfo = getRecipeRating(recipeId);
   }
 
   @media (min-width: 768px) {
-    .hero-grid {
+    .hero-grid:not(.no-image) {
       display: grid;
       grid-template-columns: 1.2fr 1.5fr;
       gap: 3rem;
       align-items: start;
     }
-    .hero-image-container {
+    .hero-grid:not(.no-image) .hero-image-container {
       grid-column: 1;
       grid-row: 1;
+    }
+    .hero-grid:not(.no-image) .hero-meta-container {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .hero-grid.no-image {
+      max-width: 800px;
+      margin: 0 auto;
     }
   }
 
@@ -233,13 +279,6 @@ const ratingInfo = getRecipeRating(recipeId);
   /* Metadata Panel */
   .hero-meta-container {
     padding: 1rem 0;
-  }
-
-  @media (min-width: 768px) {
-    .hero-meta-container {
-      grid-column: 2;
-      grid-row: 1;
-    }
   }
 
   .recipe-title {

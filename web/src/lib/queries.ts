@@ -48,6 +48,7 @@ export const RECIPE_BY_SLUG_QUERY = groq`
     priorityScore,
     cardAspectRatio,
     isEvergreen,
+    hideMainImage,
     "publicationType": coalesce(publicationType, "single"),
     body,
     roundupItems[] {

@@ -73,7 +73,7 @@ if (recipe.publicationType === 'roundup') {
     "description": recipe.excerpt,
     "numberOfItems": recipe.roundupItems?.length || 0,
     "itemListElement": recipe.roundupItems?.map((item: any, idx: number) => {
-      const targetUrl = item.externalUrl || `${Astro.site?.origin || 'https://visualrecipes.com'}/recipe/${item.recipe?.slug}`;
+      const targetUrl = item.externalUrl || `${Astro.site?.origin || 'https://nremi.com'}/recipe/${item.recipe?.slug}`;
       return {
         "@type": "ListItem",
         "position": idx + 1,
@@ -91,6 +91,12 @@ if (recipe.publicationType === 'roundup') {
     "name": recipe.title,
     "description": recipe.excerpt,
     "image": urlFor(recipe.mainImage).url(),
+    "author": {
+      "@type": "Person",
+      "name": "Natasha Remi"
+    },
+    "keywords": recipe.title,
+    "recipeCategory": recipe.parentCluster?.title,
     "datePublished": recipe.publishedAt,
     "prepTime": recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
     "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
@@ -123,19 +129,23 @@ if (recipe.publicationType === 'roundup') {
   }
 }
 
-const heroImageRawUrl = urlFor(recipe.mainImage).url();
 const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').url();
 
 import { getImage } from 'astro:assets';
-const heroImagePreload = await getImage({
-  src: heroImageRawUrl,
-  width: 900,
-  height: 1350,
-  format: 'avif',
-  widths: [360, 540, 720, 900],
-  quality: 65
-});
+let heroImagePreload: any = null;
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
+
+if (!recipe.hideMainImage) {
+  const heroImageRawUrl = urlFor(recipe.mainImage).url();
+  heroImagePreload = await getImage({
+    src: heroImageRawUrl,
+    width: 900,
+    height: 1350,
+    format: 'avif',
+    widths: [360, 540, 720, 900],
+    quality: 65
+  });
+}
 ---
 
 <Layout 
@@ -144,15 +154,17 @@ const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc
   image={ogImage}
   schema={recipeSchema}
 >
-  <link 
-    rel="preload" 
-    slot="head" 
-    as="image" 
-    href={heroImagePreload.src} 
-    imagesrcset={heroImagePreload.srcSet.attribute} 
-    imagesizes={heroImageSizes} 
-    fetchpriority="high"
-  />
+  {!recipe.hideMainImage && heroImagePreload && (
+    <link 
+      rel="preload" 
+      slot="head" 
+      as="image" 
+      href={heroImagePreload.src} 
+      imagesrcset={heroImagePreload.srcSet.attribute} 
+      imagesizes={heroImageSizes} 
+      fetchpriority="high"
+    />
+  )}
   <Header />
 
   <main class="recipe-detail-main">
@@ -163,6 +175,8 @@ const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc
         title={recipe.title}
         excerpt={recipe.excerpt}
         mainImage={recipe.mainImage}
+        hideMainImage={recipe.hideMainImage}
+        customCtaUrl={recipe.externalRecipeUrl}
         prepTime={recipe.prepTime}
         cookTime={recipe.cookTime}
         servings={recipe.servings}

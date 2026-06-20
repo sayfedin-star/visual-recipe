@@ -8,6 +8,7 @@ const mockBuilder = {
   width: () => mockBuilder,
   height: () => mockBuilder,
   auto: () => mockBuilder,
+  format: () => mockBuilder,
   url: () => '/favicon.svg',
 } as any;
 

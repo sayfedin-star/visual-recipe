@@ -136,6 +136,13 @@ export default defineType({
       validation: Rule => Rule.required().error('Main image is required for the recipe.'),
     }),
     defineField({
+      name: 'hideMainImage',
+      title: 'Hide Main Image in recipe page',
+      type: 'boolean',
+      description: 'Check this to hide the main hero image on the recipe detail page.',
+      initialValue: false,
+    }),
+    defineField({
       name: 'excerpt',
       title: 'Excerpt',
       type: 'text',
@@ -389,9 +396,9 @@ export default defineType({
     }),
     defineField({
       name: 'externalRecipeUrl',
-      title: 'External Recipe URL',
+      title: 'External Recipe URL / Custom CTA Link',
       type: 'url',
-      hidden: ({ document }) => document?.publicationType === 'roundup',
+      description: 'If set, the CTA button (Jump to Recipe / View Round-Up) will link directly to this URL instead of the default behavior.',
     }),
     defineField({
       name: 'jumpToRecipeAnchor',
