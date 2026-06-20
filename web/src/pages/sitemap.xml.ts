@@ -1,3 +1,5 @@
+export const prerender = true;
+
 import type { APIRoute } from 'astro';
 import { client } from '../lib/sanity';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
