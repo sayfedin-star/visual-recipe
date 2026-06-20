@@ -17,9 +17,5 @@
   },
   "devDependencies": {
     "typescript": "^5.3.3"
-  },
-  "optionalDependencies": {
-    "@cloudflare/workerd-linux-64": "1.20250718.0",
-    "@cloudflare/workerd-linux-arm64": "1.20250718.0"
   }
 }
