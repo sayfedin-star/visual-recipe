@@ -11,22 +11,39 @@ export const GET: APIRoute = async ({ site }) => {
       client.fetch(ALL_CLUSTERS_QUERY)
     ]);
 
-    const recipeUrls = recipes.map((r: any) => new URL(`recipe/${r.slug}`, site).toString());
-    const clusterUrls = clusters.map((c: any) => new URL(`hub/${c.slug}`, site).toString());
-    const homeUrl = new URL('', site).toString();
-    const searchUrl = new URL('search', site).toString();
+    const today = new Date().toISOString().split('T')[0];
 
-    const allUrls = [homeUrl, searchUrl, ...clusterUrls, ...recipeUrls];
+    const recipeEntries = recipes.map((r: any) => ({
+      url: new URL(`recipe/${r.slug}`, site).toString(),
+      lastmod: r.publishedAt ? new Date(r.publishedAt).toISOString().split('T')[0] : today,
+      priority: '0.6',
+      changefreq: 'weekly'
+    }));
+
+    const clusterEntries = clusters.map((c: any) => ({
+      url: new URL(`hub/${c.slug}`, site).toString(),
+      lastmod: today,
+      priority: '0.8',
+      changefreq: 'daily'
+    }));
+
+    const staticEntries = [
+      { url: new URL('', site).toString(), lastmod: today, priority: '1.0', changefreq: 'daily' },
+      { url: new URL('search', site).toString(), lastmod: today, priority: '0.5', changefreq: 'weekly' },
+    ];
+
+    const allEntries = [...staticEntries, ...clusterEntries, ...recipeEntries];
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${allUrls
+  ${allEntries
     .map(
-      (url) => `
+      (entry) => `
   <url>
-    <loc>${url}</loc>
-    <changefreq>daily</changefreq>
-    <priority>${url === homeUrl ? '1.0' : url.includes('/hub/') ? '0.8' : '0.6'}</priority>
+    <loc>${entry.url}</loc>
+    <lastmod>${entry.lastmod}</lastmod>
+    <changefreq>${entry.changefreq}</changefreq>
+    <priority>${entry.priority}</priority>
   </url>`
     )
     .join('')}

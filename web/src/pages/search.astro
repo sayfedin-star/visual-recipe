@@ -341,12 +341,10 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
     }
   });
 
-  // Load index on load
-  document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('client-search-input')) {
-      loadIndex();
-    }
-  });
+  // Module scripts are deferred in Astro — DOM is ready when this executes
+  if (document.getElementById('client-search-input')) {
+    loadIndex();
+  }
 </script>
 
 <style>

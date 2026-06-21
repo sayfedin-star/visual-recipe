@@ -12,18 +12,21 @@ import Footer from '../../components/Footer.astro';
 import RoundupItems from '../../components/RoundupItems.astro';
 import { portableTextToHtml } from '../../lib/portableText';
 
-import { client, getRecipeRating } from '../../lib/sanity';
+import { client } from '../../lib/sanity';
 import { urlFor } from '../../lib/urlFor';
 import { RECIPE_SLUGS_QUERY, ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY, RECIPE_BY_SLUG_QUERY, AUTO_RELATED_RECIPES_QUERY } from '../../lib/queries';
 
 export async function getStaticPaths() {
   try {
-    const recipes = await client.fetch(RECIPE_SLUGS_QUERY);
-    const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
+    const [recipes, clusters, allRecipes] = await Promise.all([
+      client.fetch(RECIPE_SLUGS_QUERY),
+      client.fetch(ALL_CLUSTERS_QUERY),
+      client.fetch(ALL_RECIPES_QUERY),
+    ]);
     
     return recipes.map((recipe: any) => ({
       params: { slug: recipe.slug },
-      props: { allClusters: clusters }
+      props: { allClusters: clusters, allRecipes }
     }));
   } catch (err) {
     console.warn("Sanity fetch failed in getStaticPaths for recipes:", err);
@@ -32,7 +35,7 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const { allClusters } = Astro.props;
+const { allClusters, allRecipes } = Astro.props;
 
 // Fetch full recipe detail
 const recipe = await client.fetch(RECIPE_BY_SLUG_QUERY, { slug });
@@ -43,25 +46,24 @@ if (!recipe) {
 
 // Fetch related recipes (check manual overrides first, fallback to automatic)
 let relatedRecipes = recipe.relatedRecipesManual || [];
-if (relatedRecipes.length === 0) {
+if (relatedRecipes.length === 0 && recipe.parentCluster) {
   relatedRecipes = await client.fetch(AUTO_RELATED_RECIPES_QUERY, {
     recipeId: recipe._id,
-    parentId: recipe.parentCluster._id,
-    subId: recipe.subCluster?._id || recipe.parentCluster._id
+    parentId: recipe.parentCluster?._id || '',
+    subId: recipe.subCluster?._id || recipe.parentCluster?._id || ''
   });
 }
 
 // Ensure at least 6 related recipes to meet the "internal link density of 6+ related recipes" requirement
+// Uses allRecipes from getStaticPaths (single fetch) instead of per-page API call (was O(N²))
 if (relatedRecipes.length < 6) {
-  // Pad with featured recipes from the main index to keep feed rich
-  const fallbackQuery = await client.fetch(ALL_RECIPES_QUERY);
-  const fallbackItems = fallbackQuery
+  const fallbackItems = allRecipes
     .filter((r: any) => r._id !== recipe._id && !relatedRecipes.some((rel: any) => rel._id === r._id))
     .slice(0, 6 - relatedRecipes.length);
   relatedRecipes = [...relatedRecipes, ...fallbackItems];
 }
 
-const isPureRelated = relatedRecipes.every((r: any) => r.parentCluster?.slug === recipe.parentCluster?.slug);
+const isPureRelated = recipe.parentCluster && relatedRecipes.every((r: any) => r.parentCluster?.slug === recipe.parentCluster?.slug);
 const relatedSectionTitle = isPureRelated ? `More in ${recipe.parentCluster.title}` : 'More Recipes You\'ll Love';
 
 // Build structured SEO schemas (Recipe, ItemList/CollectionPage, & FAQPage)
@@ -85,8 +87,6 @@ if (recipe.publicationType === 'roundup') {
     }) || []
   };
 } else {
-  const ratingInfo = getRecipeRating(recipe._id);
-
   recipeSchema = {
     "@context": "https://schema.org",
     "@type": "Recipe",
@@ -102,7 +102,7 @@ if (recipe.publicationType === 'roundup') {
     "datePublished": recipe.publishedAt,
     "prepTime": recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
     "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
-    "totalTime": (recipe.prepTime || recipe.cookTime) ? `PT ${(recipe.prepTime || 0) + (recipe.cookTime || 0)}M` : undefined,
+    "totalTime": (recipe.prepTime || recipe.cookTime) ? `PT${(recipe.prepTime || 0) + (recipe.cookTime || 0)}M` : undefined,
     "recipeYield": recipe.servings ? `${recipe.servings} servings` : undefined,
     "recipeIngredient": recipe.ingredients?.flatMap((group: any) => group.items) || [],
     "recipeInstructions": recipe.instructions?.map((step: any, idx: number) => ({
@@ -110,12 +110,7 @@ if (recipe.publicationType === 'roundup') {
       "position": step.stepNumber || (idx + 1),
       "text": step.instructionText,
       "image": step.stepImage ? urlFor(step.stepImage).url() : undefined
-    })) || [],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": ratingInfo.rating.toString(),
-      "reviewCount": ratingInfo.votes.toString()
-    }
+    })) || []
   };
 
   // Append FAQ if available
@@ -133,20 +128,18 @@ if (recipe.publicationType === 'roundup') {
 
 const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').url();
 
-import { getImage } from 'astro:assets';
-let heroImagePreload: any = null;
+const IMAGE_QUALITY = 65;
+const heroWidths = [360, 540, 720, 900];
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
 
-if (!recipe.hideMainImage) {
-  const heroImageRawUrl = urlFor(recipe.mainImage).url();
-  heroImagePreload = await getImage({
-    src: heroImageRawUrl,
-    width: 600,
-    height: 900,
-    format: 'avif',
-    widths: [360, 540, 720, 900],
-    quality: 65
-  });
+// Build Sanity CDN URLs for LCP preload (no Sharp/getImage needed)
+let heroPreloadSrc = '';
+let heroPreloadSrcSet = '';
+if (!recipe.hideMainImage && recipe.mainImage) {
+  heroPreloadSrc = urlFor(recipe.mainImage).width(600).auto('format').quality(IMAGE_QUALITY).url();
+  heroPreloadSrcSet = heroWidths
+    .map(w => `${urlFor(recipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+    .join(', ');
 }
 ---
 
@@ -156,13 +149,13 @@ if (!recipe.hideMainImage) {
   image={ogImage}
   schema={recipeSchema}
 >
-  {!recipe.hideMainImage && heroImagePreload && (
+  {heroPreloadSrc && (
     <link 
       rel="preload" 
       slot="head" 
       as="image" 
-      href={heroImagePreload.src} 
-      imagesrcset={heroImagePreload.srcSet.attribute} 
+      href={heroPreloadSrc} 
+      imagesrcset={heroPreloadSrcSet} 
       imagesizes={heroImageSizes} 
       fetchpriority="high"
     />
@@ -223,9 +216,11 @@ if (!recipe.hideMainImage) {
       <section class="related-discovery-section">
         <div class="related-header">
           <h2 class="related-section-title">{relatedSectionTitle}</h2>
+          {recipe.parentCluster && (
           <a href={`/hub/${recipe.parentCluster.slug}`} class="hub-explore-link">
             Explore {recipe.parentCluster.title} Hub &rarr;
           </a>
+        )}
         </div>
         
         <!-- Masonry loop of related recipes -->

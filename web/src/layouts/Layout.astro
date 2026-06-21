@@ -40,13 +40,16 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={shareImage} />
 
-    <!-- Fonts -->
+    <!-- Fonts - Reduced to only weights actually used in the design system -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap">
     </noscript>
+
+    <!-- Sanity project ID for client-side image URL construction -->
+    <meta name="sanity-project" content={import.meta.env.PUBLIC_SANITY_PROJECT_ID || 'k8dfrtog'} />
 
     <!-- Schema.org Integration -->
     {schema && (

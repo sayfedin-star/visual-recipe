@@ -255,11 +255,10 @@ try {
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('saved-feed')) {
-      loadSavedBoard();
-    }
-  });
+  // Module scripts are deferred in Astro — DOM is ready when this executes
+  if (document.getElementById('saved-feed')) {
+    loadSavedBoard();
+  }
 </script>
 
 <style>

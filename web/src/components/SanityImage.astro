@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import { urlFor } from '../lib/urlFor';
 
 interface Props {
@@ -13,31 +12,35 @@ interface Props {
   fetchpriority?: "high" | "low" | "auto";
 }
 
-const { src, alt, width, height, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
+const { src, alt, width = 800, height = 600, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
 
 if (!src) {
   return null;
 }
 
-// Extract original image URL from Sanity
-const mainUrl = urlFor(src).url();
+const IMAGE_QUALITY = 65;
 
 // Differentiate between LCP hero and non-critical images for widths
 const isHero = fetchpriority === 'high';
 const widths = isHero ? [360, 540, 720, 900] : [200, 400, 600];
+
+// Generate srcset using Sanity CDN transforms (no Sharp/build-time processing needed)
+const srcset = widths
+  .map(w => `${urlFor(src).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+  .join(', ');
+
+const defaultSrc = urlFor(src).width(width).auto('format').quality(IMAGE_QUALITY).url();
 ---
 
-<Image
-  src={mainUrl}
-  alt={alt}
-  width={width || 800}
-  height={height || 600}
-  format="avif"
-  widths={widths}
+<img
+  src={defaultSrc}
+  srcset={srcset}
   sizes={sizes}
+  alt={alt}
+  width={width}
+  height={height}
   class={className}
   loading={loading}
   decoding="async"
   fetchpriority={fetchpriority}
-  quality={65}
 />

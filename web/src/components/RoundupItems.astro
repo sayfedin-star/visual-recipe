@@ -1,5 +1,6 @@
 ---
 import SanityImage from './SanityImage.astro';
+import { getRecipeRating } from '../lib/sanity';
 
 interface Props {
   items: Array<{
@@ -33,21 +34,6 @@ function getDomainName(urlStr?: string) {
     return 'Website';
   }
 }
-
-// Deterministic mock rating generator based on title seed
-function getDeterministicRating(seed: string) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
-  }
-  const absHash = Math.abs(hash);
-  // Average rating between 4.5 and 5.0 (steps of 0.1)
-  const ratingVal = 4.5 + (absHash % 6) * 0.1;
-  const rating = ratingVal === 5.0 ? "5" : ratingVal.toFixed(1);
-  const reviews = 15 + (absHash % 285); // 15 to 299 reviews
-  return { rating, reviews };
-}
 ---
 
 <div class="roundup-list">
@@ -66,8 +52,8 @@ function getDeterministicRating(seed: string) {
     const prepTime = item.recipe?.prepTime;
     const cookTime = item.recipe?.cookTime;
 
-    // Get deterministic rating info
-    const { rating, reviews } = getDeterministicRating(itemTitle);
+    // Get rating info using shared utility
+    const ratingInfo = getRecipeRating(itemTitle);
 
     return (
       <article class={`roundup-item ${isEven ? 'even' : 'odd'}`}>
@@ -126,7 +112,7 @@ function getDeterministicRating(seed: string) {
           <!-- Ratings Section -->
           <div class="rating-container">
             <div class="stars">★ ★ ★ ★ ★</div>
-            <div class="rating-text">{reviews} REVIEWS / {rating} AVERAGE</div>
+            <div class="rating-text">{ratingInfo.votes} REVIEWS / {ratingInfo.rating} AVERAGE</div>
           </div>
 
           <!-- Action Button -->

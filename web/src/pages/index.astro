@@ -10,7 +10,6 @@ import Footer from '../components/Footer.astro';
 import { client } from '../lib/sanity';
 import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
 import { urlFor } from '../lib/urlFor';
-import { getImage } from 'astro:assets';
 
 // Fetch initial data at build-time (Static Generation)
 let recipes: any[] = [];
@@ -30,20 +29,18 @@ try {
 // Filter out categories that are sub-clusters to keep the top bar clean (or show all)
 const parentClusters = clusters.filter((c: any) => !c.parentCluster);
 
-// Preload the first recipe image in the feed (LCP element)
+// Preload the first recipe image in the feed (LCP element) using Sanity CDN URLs directly
+const IMAGE_QUALITY = 65;
 const firstRecipe = recipes[0];
-let firstImagePreload: any = null;
-let firstImageSizes = "";
+let firstImagePreloadSrc = '';
+let firstImageSrcSet = '';
+let firstImageSizes = '';
 if (firstRecipe && firstRecipe.mainImage) {
-  const aspect = firstRecipe.cardAspectRatio || 'tall';
-  const h = aspect === 'standard' ? 300 : aspect === 'super-tall' ? 800 : 600;
-  firstImagePreload = await getImage({
-    src: urlFor(firstRecipe.mainImage).url(),
-    width: 400,
-    height: h,
-    format: 'avif',
-    widths: [360, 540, 720, 900]
-  });
+  const heroWidths = [360, 540, 720, 900];
+  firstImagePreloadSrc = urlFor(firstRecipe.mainImage).width(400).auto('format').quality(IMAGE_QUALITY).url();
+  firstImageSrcSet = heroWidths
+    .map(w => `${urlFor(firstRecipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+    .join(', ');
   firstImageSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
 }
 ---
@@ -52,13 +49,13 @@ if (firstRecipe && firstRecipe.mainImage) {
   title="Visual Recipe Discovery Platform" 
   description="Pinterest-styled feed of premium visual recipes. Browse, discover, and save your next delicious meal without friction."
 >
-  {firstImagePreload && (
+  {firstImagePreloadSrc && (
     <link 
       rel="preload" 
       slot="head" 
       as="image" 
-      href={firstImagePreload.src} 
-      imagesrcset={firstImagePreload.srcSet.attribute} 
+      href={firstImagePreloadSrc} 
+      imagesrcset={firstImageSrcSet} 
       imagesizes={firstImageSizes} 
       fetchpriority="high"
     />
@@ -69,7 +66,7 @@ if (firstRecipe && firstRecipe.mainImage) {
     <!-- Premium Welcome Section -->
     <section class="welcome-section">
       <div class="welcome-container">
-        <h2 class="welcome-title">Find Your Next Culinary Inspiration</h2>
+        <h1 class="welcome-title">Find Your Next Culinary Inspiration</h1>
         <p class="welcome-subtitle">
           Explore our visual recipe space. Click an image to jump directly to cooking instructions, filter by category or season, and keep discovering.
         </p>

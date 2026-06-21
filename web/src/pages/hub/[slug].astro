@@ -10,7 +10,6 @@ import SanityImage from '../../components/SanityImage.astro';
 import { client } from '../../lib/sanity';
 import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY } from '../../lib/queries';
 import { urlFor } from '../../lib/urlFor';
-import { getImage } from 'astro:assets';
 
 export async function getStaticPaths() {
   try {
@@ -49,30 +48,26 @@ const relatedHubs = allClusters
   .filter((c) => c._id !== cluster._id && (c.parentCluster?.slug === cluster.parentCluster?.slug || c.parentCluster?.slug === cluster.slug || cluster.parentCluster?.slug === c.slug))
   .slice(0, 4);
 
-// Preload calculation for LCP element
-let preloadDetails: any = null;
-let preloadSizes = "";
+// Preload calculation for LCP element using Sanity CDN URLs
+const IMAGE_QUALITY = 65;
+let preloadSrc = '';
+let preloadSrcSet = '';
+let preloadSizes = '';
 
 if (cluster.coverImage) {
-  preloadDetails = await getImage({
-    src: urlFor(cluster.coverImage).url(),
-    width: 800,
-    height: 400,
-    format: 'avif',
-    widths: [400, 800, 1200]
-  });
+  const coverWidths = [400, 800, 1200];
+  preloadSrc = urlFor(cluster.coverImage).width(800).auto('format').quality(IMAGE_QUALITY).url();
+  preloadSrcSet = coverWidths
+    .map(w => `${urlFor(cluster.coverImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+    .join(', ');
   preloadSizes = "(min-width: 768px) 45vw, 100vw";
 } else if (recipes && recipes[0] && recipes[0].mainImage) {
   const firstRecipe = recipes[0];
-  const aspect = firstRecipe.cardAspectRatio || 'tall';
-  const h = aspect === 'standard' ? 300 : aspect === 'super-tall' ? 800 : 600;
-  preloadDetails = await getImage({
-    src: urlFor(firstRecipe.mainImage).url(),
-    width: 400,
-    height: h,
-    format: 'avif',
-    widths: [360, 540, 720, 900]
-  });
+  const heroWidths = [360, 540, 720, 900];
+  preloadSrc = urlFor(firstRecipe.mainImage).width(400).auto('format').quality(IMAGE_QUALITY).url();
+  preloadSrcSet = heroWidths
+    .map(w => `${urlFor(firstRecipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+    .join(', ');
   preloadSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
 }
 ---
@@ -82,13 +77,13 @@ if (cluster.coverImage) {
   description={cluster.description || `Browse our Pinterest-style collection of recipes inside the ${cluster.title} space.`}
   image={cluster.coverImage ? urlFor(cluster.coverImage).width(1200).height(630).format('jpg').url() : undefined}
 >
-  {preloadDetails && (
+  {preloadSrc && (
     <link 
       rel="preload" 
       slot="head" 
       as="image" 
-      href={preloadDetails.src} 
-      imagesrcset={preloadDetails.srcSet.attribute}  
+      href={preloadSrc} 
+      imagesrcset={preloadSrcSet} 
       imagesizes={preloadSizes} 
       fetchpriority="high"
     />

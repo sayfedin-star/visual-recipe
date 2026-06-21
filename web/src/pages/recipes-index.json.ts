@@ -24,7 +24,7 @@ export const GET: APIRoute = async () => {
         .width(400)
         .height(recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600)
         .auto('format')
-        .quality(80)
+        .quality(65)
         .url(),
       cardAspectRatio: recipe.cardAspectRatio || 'tall',
       publicationType: recipe.publicationType || 'single'
