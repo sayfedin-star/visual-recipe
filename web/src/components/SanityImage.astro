@@ -13,7 +13,7 @@ interface Props {
   widths?: number[];
 }
 
-const { src, alt, width = 800, height = 600, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority, widths: customWidths } = Astro.props;
+const { src, alt, width, height, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority, widths: customWidths } = Astro.props;
 
 if (!src) {
   return null;
@@ -25,12 +25,16 @@ const IMAGE_QUALITY = 65;
 const isHero = fetchpriority === 'high';
 const widths = customWidths || (isHero ? [360, 540, 720, 900] : [200, 400, 600]);
 
+// Determine display width & height dynamically to avoid oversized fallback src
+const displayWidth = width || (isHero ? 800 : 400);
+const displayHeight = height || (isHero ? 600 : 300);
+
 // Generate srcset using Sanity CDN transforms (no Sharp/build-time processing needed)
 const srcset = widths
   .map(w => `${urlFor(src).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
   .join(', ');
 
-const defaultSrc = urlFor(src).width(width).auto('format').quality(IMAGE_QUALITY).url();
+const defaultSrc = urlFor(src).width(displayWidth).auto('format').quality(IMAGE_QUALITY).url();
 ---
 
 <img
@@ -38,8 +42,8 @@ const defaultSrc = urlFor(src).width(width).auto('format').quality(IMAGE_QUALITY
   srcset={srcset}
   sizes={sizes}
   alt={alt}
-  width={width}
-  height={height}
+  width={displayWidth}
+  height={displayHeight}
   class={className}
   loading={loading}
   decoding="async"

@@ -9,6 +9,7 @@ const mockBuilder = {
   height: () => mockBuilder,
   auto: () => mockBuilder,
   format: () => mockBuilder,
+  quality: () => mockBuilder,
   url: () => '/favicon.svg',
 } as any;
 
