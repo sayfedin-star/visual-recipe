@@ -48,31 +48,6 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
       </div>
 
       {recipes.length > initialCount && (
-        <script
-          type="application/json"
-          id="feed-remaining-data"
-          set:text={JSON.stringify(
-            recipes.slice(initialCount).map(r => ({
-              _id: r._id,
-              title: r.title,
-              slug: r.slug,
-              excerpt: r.excerpt,
-              cardAspectRatio: r.cardAspectRatio || 'tall',
-              badges: r.badges || [],
-              parentCluster: r.parentCluster || null,
-              publicationType: r.publicationType || 'single',
-              jumpToRecipeAnchor: r.jumpToRecipeAnchor || 'recipe-card',
-              imageUrl: r.mainImage?.asset?._ref
-                ? r.mainImage.asset._ref
-                    .replace('image-', '')
-                    .replace(/-(\w+)$/, '.$1')
-                : null
-            }))
-          )}
-        />
-      )}
-
-      {recipes.length > initialCount && (
         <div class="feed-actions" id="load-more-container">
           <button id="load-more-btn" class="load-more-button">
             Discover More Recipes
@@ -87,12 +62,10 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
   const loadMoreBtn = document.getElementById('load-more-btn');
   const loadMoreContainer = document.getElementById('load-more-container');
   const feed = document.getElementById('recipes-feed');
-  const dataEl = document.getElementById('feed-remaining-data');
 
-  if (loadMoreBtn && feed && dataEl) {
+  if (loadMoreBtn && feed) {
     let remainingRecipes: any[] = [];
-    try { remainingRecipes = JSON.parse(dataEl.textContent || '[]'); } catch {}
-
+    let isLoaded = false;
     const step = 8;
     let currentIndex = 0;
 
@@ -112,33 +85,29 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
     function buildCardHTML(r: any): string {
       const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
       const aspectHeight = r.cardAspectRatio === 'standard' ? 300 : r.cardAspectRatio === 'super-tall' ? 800 : 600;
-      const sanityProjectId = (document.querySelector('meta[name="sanity-project"]') as HTMLMetaElement)?.content || 'k8dfrtog';
-      const baseImgUrl = r.imageUrl
-        ? `https://cdn.sanity.io/images/${sanityProjectId}/production/${r.imageUrl}`
-        : '/favicon.svg';
-      const imgSrc = r.imageUrl
-        ? `${baseImgUrl}?w=400&q=65&auto=format`
-        : '/favicon.svg';
-      const imgSrcSet = r.imageUrl
-        ? `${baseImgUrl}?w=200&q=65&auto=format 200w, ${baseImgUrl}?w=400&q=65&auto=format 400w, ${baseImgUrl}?w=600&q=65&auto=format 600w`
-        : '';
+      const imgSrc = r.imageUrl || '/favicon.svg';
+      let imgSrcSet = '';
+      if (r.imageUrl && r.imageUrl.includes('cdn.sanity.io')) {
+        const urlWithoutParams = r.imageUrl.split('?')[0];
+        imgSrcSet = `${urlWithoutParams}?w=200&q=65&auto=format 200w, ${urlWithoutParams}?w=400&q=65&auto=format 400w, ${urlWithoutParams}?w=600&q=65&auto=format 600w`;
+      }
       const sizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
       const clusterBadge = r.parentCluster
-        ? `<a href="/hub/${escapeHtml(r.parentCluster.slug)}" class="category-badge">${escapeHtml(r.parentCluster.title)}</a>`
+        ? `<a href="/hub/${escapeHtml(r.parentClusterSlug)}" class="category-badge">${escapeHtml(r.parentCluster)}</a>`
         : '';
       const roundupBadge = r.publicationType === 'roundup'
         ? `<span class="roundup-badge">Round-Up</span>`
         : '';
-      const badgesHTML = r.badges.slice(0, 2)
+      const badgesHTML = (r.badges || []).slice(0, 2)
         .map((b: string) => `<span class="badge">${escapeHtml(b)}</span>`)
         .join('');
 
       return `
-        <article class="recipe-card" data-recipe-id="${escapeHtml(r._id)}">
+        <article class="recipe-card" data-recipe-id="${escapeHtml(r.id)}">
           <div class="image-container ${aspect}">
             <a href="/recipe/${escapeHtml(r.slug)}" class="image-link"
                aria-label="View recipe instructions for ${escapeHtml(r.title)}">
-              <img src="${imgSrc}" srcset="${imgSrcSet}" sizes="${sizes}" alt="${escapeHtml(r.title)}" width="400" height="${aspectHeight}"
+              <img src="${escapeHtml(imgSrc)}" srcset="${escapeHtml(imgSrcSet)}" sizes="${sizes}" alt="${escapeHtml(r.title)}" width="400" height="${aspectHeight}"
                    loading="lazy" decoding="async" class="card-img" />
               <div class="hover-overlay">
                 <span class="view-btn">View Recipe</span>
@@ -161,7 +130,46 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
         </article>`;
     }
 
-    loadMoreBtn.addEventListener('click', () => {
+    async function loadRemainingRecipes() {
+      loadMoreBtn!.textContent = 'Loading...';
+      try {
+        const res = await fetch('/recipes-index.json');
+        const allRecipes = await res.json();
+        
+        // Get already rendered IDs to filter out duplicates
+        const renderedIds = new Set(
+          Array.from(feed!.querySelectorAll('[data-recipe-id]'))
+            .map(el => el.getAttribute('data-recipe-id'))
+        );
+
+        // Determine if we are filtering by a specific cluster (hub page context)
+        let filterClusterSlug: string | null = null;
+        const pathParts = window.location.pathname.split('/');
+        const hubIndex = pathParts.indexOf('hub');
+        if (hubIndex !== -1 && pathParts[hubIndex + 1]) {
+          filterClusterSlug = pathParts[hubIndex + 1];
+        }
+
+        remainingRecipes = allRecipes.filter((r: any) => {
+          if (renderedIds.has(r.id)) return false;
+          if (filterClusterSlug && r.parentClusterSlug !== filterClusterSlug) return false;
+          return true;
+        });
+
+        isLoaded = true;
+        loadMoreBtn!.textContent = 'Discover More Recipes';
+      } catch (err) {
+        console.error('Failed to load remaining recipes:', err);
+        loadMoreBtn!.textContent = 'Failed to load. Click to retry';
+      }
+    }
+
+    loadMoreBtn.addEventListener('click', async () => {
+      if (!isLoaded) {
+        await loadRemainingRecipes();
+        if (!isLoaded) return; // Loading failed
+      }
+
       const batch = remainingRecipes.slice(currentIndex, currentIndex + step);
       let savedList: string[] = [];
       try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
@@ -173,7 +181,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
         wrapper.innerHTML = buildCardHTML(r);
 
         // Sync saved state on newly generated card
-        if (savedList.includes(r._id)) {
+        if (savedList.includes(r.id)) {
           const saveBtn = wrapper.querySelector('[data-save-btn]');
           if (saveBtn) {
             saveBtn.classList.add('saved');

@@ -169,7 +169,7 @@ export const RECIPE_SLUGS_QUERY = groq`
 
 // Fetch minimal fields for client-side search index generation
 export const SEARCH_INDEX_QUERY = groq`
-  *[_type == "recipe"] {
+  *[_type == "recipe"] | order(featured desc, priorityScore desc, publishedAt desc) {
     _id,
     title,
     "slug": slug.current,
