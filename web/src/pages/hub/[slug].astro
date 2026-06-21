@@ -122,7 +122,7 @@ if (cluster.coverImage) {
   <!-- Masonry Feed -->
   <main class="hub-feed-content">
     <h2 class="feed-section-title">Discovery Feed in this Space</h2>
-    <Feed recipes={recipes} initialCount={12} />
+    <Feed recipes={recipes} initialCount={12} prioritizeFirst={!cluster.coverImage} />
 
     <!-- Related Hubs loop at bottom -->
     {relatedHubs.length > 0 && (

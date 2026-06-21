@@ -189,7 +189,7 @@ if (!recipe.hideMainImage && recipe.mainImage) {
 
       {recipe.publicationType === 'roundup' ? (
         <div class="roundup-content-wrapper" id={recipe.jumpToRecipeAnchor || 'recipe-card'}>
-          <RoundupItems items={recipe.roundupItems || []} />
+          <RoundupItems items={recipe.roundupItems || []} prioritizeFirst={!!recipe.hideMainImage} />
         </div>
       ) : (
         <>
@@ -224,7 +224,7 @@ if (!recipe.hideMainImage && recipe.mainImage) {
         </div>
         
         <!-- Masonry loop of related recipes -->
-        <Feed recipes={relatedRecipes} initialCount={6} />
+        <Feed recipes={relatedRecipes} initialCount={6} prioritizeFirst={false} />
       </section>
 
     </div>

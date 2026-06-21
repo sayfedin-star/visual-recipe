@@ -15,9 +15,10 @@ interface Props {
     parentCluster?: { title: string; slug: string };
   }>;
   initialCount?: number;
+  prioritizeFirst?: boolean;
 }
 
-const { recipes = [], initialCount = 12 } = Astro.props;
+const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
 ---
 
 <div class="feed-container">
@@ -39,8 +40,8 @@ const { recipes = [], initialCount = 12 } = Astro.props;
           >
             <Card 
               recipe={recipe} 
-              loading={index === 0 ? 'eager' : 'lazy'} 
-              fetchpriority={index === 0 ? 'high' : undefined}
+              loading={index === 0 && prioritizeFirst ? 'eager' : 'lazy'} 
+              fetchpriority={index === 0 && prioritizeFirst ? 'high' : undefined}
             />
           </div>
         ))}

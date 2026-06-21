@@ -46,6 +46,7 @@ const { instructions = [] } = Astro.props;
                     alt={step.stepImage.alt || `Instruction step ${stepNum} illustration`}
                     width={500}
                     height={350}
+                    sizes="(min-width: 640px) 500px, calc(100vw - 7rem)"
                     class="step-img"
                   />
                 </div>

@@ -20,9 +20,10 @@ interface Props {
     externalUrl?: string;
     customCta?: string;
   }>;
+  prioritizeFirst?: boolean;
 }
 
-const { items = [] } = Astro.props;
+const { items = [], prioritizeFirst = false } = Astro.props;
 
 // Helper to extract domain from external URL
 function getDomainName(urlStr?: string) {
@@ -69,6 +70,7 @@ function getDomainName(urlStr?: string) {
                 sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
                 class="roundup-image"
                 loading={index === 0 ? "eager" : "lazy"}
+                fetchpriority={index === 0 && prioritizeFirst ? "high" : undefined}
               />
             ) : (
               <div class="roundup-image-placeholder">🍳 No Image Available</div>
