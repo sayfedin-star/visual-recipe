@@ -36,9 +36,9 @@ let firstImagePreloadSrc = '';
 let firstImageSrcSet = '';
 let firstImageSizes = '';
 if (firstRecipe && firstRecipe.mainImage) {
-  const heroWidths = [360, 540, 720, 900];
+  const cardWidths = [200, 400, 600];
   firstImagePreloadSrc = urlFor(firstRecipe.mainImage).width(400).auto('format').quality(IMAGE_QUALITY).url();
-  firstImageSrcSet = heroWidths
+  firstImageSrcSet = cardWidths
     .map(w => `${urlFor(firstRecipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
     .join(', ');
   firstImageSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";

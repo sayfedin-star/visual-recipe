@@ -10,9 +10,10 @@ interface Props {
   class?: string;
   loading?: "lazy" | "eager";
   fetchpriority?: "high" | "low" | "auto";
+  widths?: number[];
 }
 
-const { src, alt, width = 800, height = 600, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority } = Astro.props;
+const { src, alt, width = 800, height = 600, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority, widths: customWidths } = Astro.props;
 
 if (!src) {
   return null;
@@ -22,7 +23,7 @@ const IMAGE_QUALITY = 65;
 
 // Differentiate between LCP hero and non-critical images for widths
 const isHero = fetchpriority === 'high';
-const widths = isHero ? [360, 540, 720, 900] : [200, 400, 600];
+const widths = customWidths || (isHero ? [360, 540, 720, 900] : [200, 400, 600]);
 
 // Generate srcset using Sanity CDN transforms (no Sharp/build-time processing needed)
 const srcset = widths

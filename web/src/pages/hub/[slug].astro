@@ -63,9 +63,9 @@ if (cluster.coverImage) {
   preloadSizes = "(min-width: 768px) 45vw, 100vw";
 } else if (recipes && recipes[0] && recipes[0].mainImage) {
   const firstRecipe = recipes[0];
-  const heroWidths = [360, 540, 720, 900];
+  const cardWidths = [200, 400, 600];
   preloadSrc = urlFor(firstRecipe.mainImage).width(400).auto('format').quality(IMAGE_QUALITY).url();
-  preloadSrcSet = heroWidths
+  preloadSrcSet = cardWidths
     .map(w => `${urlFor(firstRecipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
     .join(', ');
   preloadSizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
