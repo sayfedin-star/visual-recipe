@@ -55,7 +55,7 @@ let preloadSrcSet = '';
 let preloadSizes = '';
 
 if (cluster.coverImage) {
-  const coverWidths = [400, 800, 1200];
+  const coverWidths = [360, 540, 720, 900];
   preloadSrc = urlFor(cluster.coverImage).width(800).auto('format').quality(IMAGE_QUALITY).url();
   preloadSrcSet = coverWidths
     .map(w => `${urlFor(cluster.coverImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
