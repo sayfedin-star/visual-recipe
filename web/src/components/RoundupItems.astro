@@ -26,16 +26,6 @@ interface Props {
 
 const { items = [], prioritizeFirst = false } = Astro.props;
 
-// Helper to extract domain from external URL
-function getDomainName(urlStr?: string) {
-  if (!urlStr) return '';
-  try {
-    const url = new URL(urlStr);
-    return url.hostname.replace('www.', '');
-  } catch {
-    return 'Website';
-  }
-}
 
 // Helper to extract dimensions from Sanity image asset ID/reference
 function getSanityImageDimensions(source: any) {
@@ -74,7 +64,6 @@ function getSanityImageDimensions(source: any) {
     const targetUrl = isExternal 
       ? item.externalUrl 
       : (item.recipe?.slug ? `/recipe/${item.recipe.slug}` : '#');
-    const domainName = isExternal ? getDomainName(item.externalUrl) : '';
     
     // Quick metadata for internal recipe
     const badges = item.recipe?.badges || [];
@@ -120,12 +109,6 @@ function getSanityImageDimensions(source: any) {
               />
             ) : (
               <div class="roundup-image-placeholder">🍳 No Image Available</div>
-            )}
-            
-            {domainName && (
-              <span class="external-domain-label">
-                {domainName}
-              </span>
             )}
           </a>
         </div>
@@ -277,19 +260,6 @@ function getSanityImageDimensions(source: any) {
     color: var(--color-text-muted);
   }
 
-  .external-domain-label {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background-color: rgba(17, 17, 17, 0.8);
-    backdrop-filter: blur(4px);
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.35rem 0.75rem;
-    border-radius: var(--radius-sm);
-    letter-spacing: 0.025em;
-  }
 
   /* Info Section */
   .roundup-info-wrapper {
