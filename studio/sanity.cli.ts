@@ -8,5 +8,7 @@ export default defineCliConfig({
   studioHost: 'visual-recipe',
   deployment: {
     appId: 'vcysy983sivv0455o9tbpt83',
+    autoUpdates: true,
   }
 });
+
