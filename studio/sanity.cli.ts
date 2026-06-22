@@ -5,5 +5,8 @@ export default defineCliConfig({
     projectId: 'k8dfrtog',
     dataset: 'production'
   },
-  studioHost: 'visual-recipe'
+  studioHost: 'visual-recipe',
+  deployment: {
+    appId: 'vcysy983sivv0455o9tbpt83',
+  }
 });
