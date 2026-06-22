@@ -99,6 +99,20 @@ export default defineType({
               type: 'string',
               description: 'Optional override for the CTA button (defaults to "MAKE THIS RECIPE")',
             }),
+            defineField({
+              name: 'imageDisplayMode',
+              title: 'Image Display Mode',
+              type: 'string',
+              options: {
+                list: [
+                  { title: 'Cover (Default)', value: 'cover' },
+                  { title: 'Contain', value: 'contain' },
+                  { title: 'Original Ratio', value: 'original' },
+                ],
+              },
+              initialValue: 'cover',
+              description: 'Choose how the image is styled/cropped in the roundup list.',
+            }),
           ],
           preview: {
             select: {

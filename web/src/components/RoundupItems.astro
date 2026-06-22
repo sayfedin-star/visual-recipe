@@ -19,6 +19,7 @@ interface Props {
     image?: any;
     externalUrl?: string;
     customCta?: string;
+    imageDisplayMode?: 'cover' | 'contain' | 'original';
   }>;
   prioritizeFirst?: boolean;
 }
@@ -34,6 +35,33 @@ function getDomainName(urlStr?: string) {
   } catch {
     return 'Website';
   }
+}
+
+// Helper to extract dimensions from Sanity image asset ID/reference
+function getSanityImageDimensions(source: any) {
+  if (!source) return null;
+  let ref = '';
+  if (typeof source === 'string') {
+    ref = source;
+  } else if (source.asset && typeof source.asset._ref === 'string') {
+    ref = source.asset._ref;
+  } else if (source.asset && typeof source.asset._id === 'string') {
+    ref = source.asset._id;
+  }
+  
+  if (!ref) return null;
+  
+  const parts = ref.split('-');
+  if (parts.length >= 3) {
+    const dimensions = parts[2];
+    const [widthStr, heightStr] = dimensions.split('x');
+    const width = parseInt(widthStr, 10);
+    const height = parseInt(heightStr, 10);
+    if (!isNaN(width) && !isNaN(height)) {
+      return { width, height, aspectRatio: width / height };
+    }
+  }
+  return null;
 }
 ---
 
@@ -56,19 +84,37 @@ function getDomainName(urlStr?: string) {
     // Get rating info using shared utility
     const ratingInfo = getRecipeRating(itemTitle);
 
+    const displayMode = item.imageDisplayMode || 'cover';
+    const dimensions = getSanityImageDimensions(itemImage);
+
+    let imageWidth = 500;
+    let imageHeight = 375;
+    let wrapperStyle = '';
+    let finalMode = displayMode;
+
+    if (displayMode === 'original') {
+      if (dimensions) {
+        imageWidth = 500;
+        imageHeight = Math.round(500 / dimensions.aspectRatio);
+        wrapperStyle = `aspect-ratio: ${dimensions.width} / ${dimensions.height};`;
+      } else {
+        finalMode = 'cover';
+      }
+    }
+
     return (
       <article class={`roundup-item ${isEven ? 'even' : 'odd'}`}>
         <!-- Item Visual Media -->
-        <div class="roundup-media-wrapper">
+        <div class={`roundup-media-wrapper mode-${finalMode}`} style={wrapperStyle}>
           <a href={targetUrl} class="media-link" target={isExternal ? "_blank" : "_self"} rel={isExternal ? "noopener noreferrer" : ""}>
             {itemImage ? (
               <SanityImage 
                 src={itemImage} 
                 alt={itemTitle}
-                width={500}
-                height={375}
+                width={imageWidth}
+                height={imageHeight}
                 sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
-                class="roundup-image"
+                class={`roundup-image display-${finalMode}`}
                 loading={index === 0 ? "eager" : "lazy"}
                 fetchpriority={index === 0 && prioritizeFirst ? "high" : undefined}
               />
@@ -190,6 +236,10 @@ function getDomainName(urlStr?: string) {
     background-color: var(--color-surface);
   }
 
+  .roundup-media-wrapper.mode-original {
+    aspect-ratio: auto;
+  }
+
   .media-link {
     display: block;
     width: 100%;
@@ -203,7 +253,16 @@ function getDomainName(urlStr?: string) {
     transition: transform 0.5s ease;
   }
 
-  .roundup-item:hover .roundup-image {
+  .roundup-image.display-contain {
+    object-fit: contain;
+  }
+
+  .roundup-image.display-original {
+    object-fit: cover;
+  }
+
+  .roundup-item:hover .roundup-image.display-cover,
+  .roundup-item:hover .roundup-image.display-original {
     transform: scale(1.05);
   }
 
