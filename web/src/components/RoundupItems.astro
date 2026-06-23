@@ -104,8 +104,7 @@ function getSanityImageDimensions(source: any) {
                 height={imageHeight}
                 sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
                 class={`roundup-image display-${finalMode}`}
-                loading={index === 0 ? "eager" : "lazy"}
-                fetchpriority={index === 0 && prioritizeFirst ? "high" : undefined}
+                loading="lazy"
               />
             ) : (
               <div class="roundup-image-placeholder">🍳 No Image Available</div>
@@ -142,7 +141,7 @@ function getSanityImageDimensions(source: any) {
 
           <!-- Ratings Section -->
           <div class="rating-container">
-            <div class="stars">★ ★ ★ ★ ★</div>
+            <div class="stars" role="img" aria-label={`Rating: ${ratingInfo.rating} out of 5 stars`}><span aria-hidden="true">★ ★ ★ ★ ★</span></div>
             <div class="rating-text">{ratingInfo.votes} REVIEWS / {ratingInfo.rating} AVERAGE</div>
           </div>
 
@@ -179,6 +178,8 @@ function getSanityImageDimensions(source: any) {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 550px;
   }
 
   .roundup-item:hover {

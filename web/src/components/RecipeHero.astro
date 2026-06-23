@@ -68,11 +68,11 @@ const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
           </div>
           
           <div class="rating-block">
-            <div class="stars" aria-label={`Rating: ${ratingInfo.rating} out of 5 stars`}>
+            <div class="stars" role="img" aria-label={`Rating: ${ratingInfo.rating} out of 5 stars`}>
               {Array.from({ length: 5 }).map((_, i) => {
                 const filled = i < Math.floor(ratingInfo.rating);
                 return (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill={filled ? "#f39c12" : "none"} stroke="#f39c12" stroke-width="1.5" class="star-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill={filled ? "#f39c12" : "none"} stroke="#f39c12" stroke-width="1.5" class="star-icon" aria-hidden="true">
                     <path d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.6 3.1-.114 4.707c-.02.836.88 1.48 1.579 1.025L10 15.547l4.088 2.602c.699.455 1.599-.189 1.579-1.025l-.114-4.707 3.6-3.1c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" />
                   </svg>
                 );
@@ -176,6 +176,7 @@ const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
               class="hero-img"
               loading="eager"
               fetchpriority="high"
+              widths={[360, 540, 720, 750, 900, 1080]}
             />
             <div class="image-overlay">
               <span class="jump-label">

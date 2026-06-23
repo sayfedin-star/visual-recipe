@@ -129,7 +129,7 @@ if (recipe.publicationType === 'roundup') {
 const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').url();
 
 const IMAGE_QUALITY = 65;
-const heroWidths = [360, 540, 720, 900];
+const heroWidths = [360, 540, 720, 750, 900, 1080];
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)";
 
 // Build Sanity CDN URLs for LCP preload (no Sharp/getImage needed)
