@@ -102,9 +102,10 @@ function getSanityImageDimensions(source: any) {
                 alt={itemTitle}
                 width={imageWidth}
                 height={imageHeight}
-                sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 3rem)"
+                sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 48px)"
                 class={`roundup-image display-${finalMode}`}
-                loading="lazy"
+                loading={index === 0 && prioritizeFirst ? "eager" : "lazy"}
+                fetchpriority={index === 0 && prioritizeFirst ? "high" : undefined}
               />
             ) : (
               <div class="roundup-image-placeholder">🍳 No Image Available</div>
@@ -179,7 +180,7 @@ function getSanityImageDimensions(source: any) {
     box-shadow: var(--shadow-sm);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     content-visibility: auto;
-    contain-intrinsic-size: auto 550px;
+    contain-intrinsic-size: auto 970px;
   }
 
   .roundup-item:hover {
@@ -197,6 +198,7 @@ function getSanityImageDimensions(source: any) {
       background: transparent;
       border-radius: 0;
       overflow: visible;
+      contain-intrinsic-size: auto 400px;
     }
 
     .roundup-item:hover {
