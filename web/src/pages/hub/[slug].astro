@@ -55,10 +55,10 @@ let preloadSrcSet = '';
 let preloadSizes = '';
 
 if (cluster.coverImage) {
-  const coverWidths = [360, 540, 720, 900];
-  preloadSrc = urlFor(cluster.coverImage).width(800).auto('format').quality(IMAGE_QUALITY).url();
+  const coverWidths = [360, 540, 720, 750, 900, 1080];
+  preloadSrc = urlFor(cluster.coverImage).width(800).height(400).fit('crop').auto('format').quality(IMAGE_QUALITY).url();
   preloadSrcSet = coverWidths
-    .map(w => `${urlFor(cluster.coverImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+    .map(w => `${urlFor(cluster.coverImage).width(w).height(Math.round(w / 2)).fit('crop').auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
     .join(', ');
   preloadSizes = "(min-width: 768px) 45vw, 100vw";
 } else if (recipes && recipes[0] && recipes[0].mainImage) {
@@ -75,7 +75,7 @@ if (cluster.coverImage) {
 <Layout 
   title={`${cluster.title} Recipes`} 
   description={cluster.description || `Browse our Pinterest-style collection of recipes inside the ${cluster.title} space.`}
-  image={cluster.coverImage ? urlFor(cluster.coverImage).width(1200).height(630).format('jpg').url() : undefined}
+  image={cluster.coverImage ? urlFor(cluster.coverImage).width(1200).height(630).format('jpg').quality(75).url() : undefined}
 >
   {preloadSrc && (
     <link 
@@ -104,6 +104,7 @@ if (cluster.coverImage) {
             class="hub-cover-img"
             loading="eager"
             fetchpriority="high"
+            widths={[360, 540, 720, 750, 900, 1080]}
           />
         </div>
       )}

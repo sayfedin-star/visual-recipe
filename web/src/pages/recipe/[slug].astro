@@ -92,7 +92,7 @@ if (recipe.publicationType === 'roundup') {
     "@type": "Recipe",
     "name": recipe.title,
     "description": recipe.excerpt,
-    "image": urlFor(recipe.mainImage).url(),
+    "image": urlFor(recipe.mainImage).width(1200).auto('format').quality(75).url(),
     "author": {
       "@type": "Person",
       "name": "Natasha Remi"
@@ -126,21 +126,21 @@ if (recipe.publicationType === 'roundup') {
   }
 }
 
-const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').url();
+const ogImage = urlFor(recipe.mainImage).width(1200).height(630).format('jpg').quality(75).url();
 
 const IMAGE_QUALITY = 65;
 const heroWidths = [360, 540, 720, 750, 900, 1080];
 const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 48px)";
 
-// Build Sanity CDN URLs for LCP preload (no Sharp/getImage needed)
-let heroPreloadSrc = '';
-let heroPreloadSrcSet = '';
-if (!recipe.hideMainImage && recipe.mainImage) {
-  heroPreloadSrc = urlFor(recipe.mainImage).width(600).auto('format').quality(IMAGE_QUALITY).url();
-  heroPreloadSrcSet = heroWidths
-    .map(w => `${urlFor(recipe.mainImage).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
-    .join(', ');
-}
+  // Build Sanity CDN URLs for LCP preload (no Sharp/getImage needed)
+  let heroPreloadSrc = '';
+  let heroPreloadSrcSet = '';
+  if (!recipe.hideMainImage && recipe.mainImage) {
+    heroPreloadSrc = urlFor(recipe.mainImage).width(600).height(900).fit('crop').auto('format').quality(IMAGE_QUALITY).url();
+    heroPreloadSrcSet = heroWidths
+      .map(w => `${urlFor(recipe.mainImage).width(w).height(Math.round(w * 1.5)).fit('crop').auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+      .join(', ');
+  }
 ---
 
 <Layout 

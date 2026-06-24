@@ -29,12 +29,25 @@ const widths = customWidths || (isHero ? [360, 540, 720, 750, 900, 1080] : [200,
 const displayWidth = width || (isHero ? 800 : 400);
 const displayHeight = height || (isHero ? 600 : 300);
 
+// Calculate aspect ratio if both props are present to enable CDN-side cropping
+const aspect = (width && height) ? width / height : null;
+
 // Generate srcset using Sanity CDN transforms (no Sharp/build-time processing needed)
 const srcset = widths
-  .map(w => `${urlFor(src).width(w).auto('format').quality(IMAGE_QUALITY).url()} ${w}w`)
+  .map(w => {
+    let imgBuilder = urlFor(src).width(w);
+    if (aspect) {
+      imgBuilder = imgBuilder.height(Math.round(w / aspect)).fit('crop');
+    }
+    return `${imgBuilder.auto('format').quality(IMAGE_QUALITY).url()} ${w}w`;
+  })
   .join(', ');
 
-const defaultSrc = urlFor(src).width(displayWidth).auto('format').quality(IMAGE_QUALITY).url();
+let defaultBuilder = urlFor(src).width(displayWidth);
+if (width && height) {
+  defaultBuilder = defaultBuilder.height(displayHeight).fit('crop');
+}
+const defaultSrc = defaultBuilder.auto('format').quality(IMAGE_QUALITY).url();
 ---
 
 <img
