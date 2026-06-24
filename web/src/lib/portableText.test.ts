@@ -46,7 +46,9 @@ test('portableTextToHtml - Unsafe URLs are rendered as plain text', () => {
     'javascript:alert("xss")',
     'javascript://%250Aalert("xss")',
     'data:text/html,<script>alert("xss")</script>',
-    'vbscript:msgbox("xss")'
+    'vbscript:msgbox("xss")',
+    '  javascript:alert(1)',
+    'Javascript:alert(1)'
   ];
 
   for (const url of unsafeUrls) {
