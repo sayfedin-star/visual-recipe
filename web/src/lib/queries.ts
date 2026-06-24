@@ -25,8 +25,6 @@ export const ALL_CLUSTERS_QUERY = groq`
     _id,
     title,
     "slug": slug.current,
-    description,
-    coverImage,
     parentCluster->{ title, "slug": slug.current }
   }
 `;
