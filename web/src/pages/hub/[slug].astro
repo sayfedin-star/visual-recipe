@@ -8,7 +8,7 @@ import Footer from '../../components/Footer.astro';
 import SanityImage from '../../components/SanityImage.astro';
 
 import { client } from '../../lib/sanity';
-import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY } from '../../lib/queries';
+import { ALL_CLUSTERS_QUERY, RECIPES_BY_CLUSTER_QUERY, CLUSTER_BY_SLUG_QUERY } from '../../lib/queries';
 import { urlFor } from '../../lib/urlFor';
 
 export async function getStaticPaths() {
@@ -16,7 +16,7 @@ export async function getStaticPaths() {
     const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
     return clusters.map((cluster: any) => ({
       params: { slug: cluster.slug },
-      props: { cluster, allClusters: clusters }
+      props: { allClusters: clusters }
     }));
   } catch (err) {
     console.warn("Sanity fetch failed in getStaticPaths for hubs:", err);
@@ -25,18 +25,18 @@ export async function getStaticPaths() {
 }
 
 interface Props {
-  cluster: {
-    _id: string;
-    title: string;
-    slug: string;
-    description: string;
-    coverImage: any;
-    parentCluster?: { title: string; slug: string };
-  };
   allClusters: any[];
 }
 
-const { cluster, allClusters } = Astro.props;
+const { slug } = Astro.params;
+const { allClusters } = Astro.props;
+
+// Fetch full cluster details dynamically at build time
+const cluster = await client.fetch(CLUSTER_BY_SLUG_QUERY, { slug });
+
+if (!cluster) {
+  return Astro.redirect('/404');
+}
 
 // Fetch recipes in this cluster dynamically at build time
 const recipes = await client.fetch(RECIPES_BY_CLUSTER_QUERY, {
