@@ -9,17 +9,13 @@ export const ALL_RECIPES_QUERY = groq`
     excerpt,
     mainImage,
     publishedAt,
-    featured,
-    priorityScore,
     cardAspectRatio,
     badges,
     intentTags,
     season,
     "publicationType": coalesce(publicationType, "single"),
     jumpToRecipeAnchor,
-    parentCluster->{ title, "slug": slug.current },
-    subCluster->{ title, "slug": slug.current },
-    adjacentClusters[]->{ title, "slug": slug.current }
+    parentCluster->{ title, "slug": slug.current }
   }
 `;
 
