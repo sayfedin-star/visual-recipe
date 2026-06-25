@@ -8,7 +8,7 @@ interface Props {
       _id: string;
       title: string;
       slug: string;
-      mainImage: any;
+      mainImage: import("../lib/types").SanityImage;
       excerpt: string;
       badges?: string[];
       prepTime?: number;
@@ -16,7 +16,7 @@ interface Props {
     };
     title?: string;
     description: string;
-    image?: any;
+    image?: import("../lib/types").SanityImage;
     externalUrl?: string;
     customCta?: string;
     imageDisplayMode?: 'cover' | 'contain' | 'original';
@@ -28,7 +28,7 @@ const { items = [], prioritizeFirst = false } = Astro.props;
 
 
 // Helper to extract dimensions from Sanity image asset ID/reference
-function getSanityImageDimensions(source: any) {
+function getSanityImageDimensions(source: import("../lib/types").SanityImage) {
   if (!source) return null;
   let ref = '';
   if (typeof source === 'string') {

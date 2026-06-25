@@ -7,7 +7,7 @@ interface Props {
     title: string;
     slug: string;
     excerpt: string;
-    mainImage: any;
+    mainImage: import("../lib/types").SanityImage;
     cardAspectRatio?: 'standard' | 'tall' | 'super-tall';
     badges?: string[];
     intentTags?: string[];
@@ -64,7 +64,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
   const feed = document.getElementById('recipes-feed');
 
   if (loadMoreBtn && feed) {
-    let remainingRecipes: any[] = [];
+    let remainingRecipes: import("../lib/types").Recipe[] = [];
     let isLoaded = false;
     const step = 8;
     let currentIndex = 0;
@@ -82,7 +82,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
       'super-tall': 'aspect-[1/2]',
     };
 
-    function buildCardHTML(r: any): string {
+    function buildCardHTML(r: import("../lib/types").Recipe): string {
       const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
       const aspectHeight = r.cardAspectRatio === 'standard' ? 300 : r.cardAspectRatio === 'super-tall' ? 800 : 600;
       const imgSrc = r.imageUrl || '/favicon.svg';
@@ -150,7 +150,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
           filterClusterSlug = pathParts[hubIndex + 1];
         }
 
-        remainingRecipes = allRecipes.filter((r: any) => {
+        remainingRecipes = allRecipes.filter((r: import("../lib/types").Recipe) => {
           if (renderedIds.has(r.id)) return false;
           if (filterClusterSlug && r.parentClusterSlug !== filterClusterSlug) return false;
           return true;

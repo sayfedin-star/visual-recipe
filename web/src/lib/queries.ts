@@ -38,10 +38,9 @@ export const RECIPE_BY_SLUG_QUERY = groq`
     mainImage,
     excerpt,
     publishedAt,
-    featured,
-    priorityScore,
+    // priorityScore and featured removed as they are unused in UI
     cardAspectRatio,
-    isEvergreen,
+    // isEvergreen removed as it is unused in UI
     hideMainImage,
     "publicationType": coalesce(publicationType, "single"),
     body,
@@ -66,7 +65,7 @@ export const RECIPE_BY_SLUG_QUERY = groq`
     },
     parentCluster->{ _id, title, "slug": slug.current },
     subCluster->{ _id, title, "slug": slug.current },
-    adjacentClusters[]->{ _id, title, "slug": slug.current },
+    // adjacentClusters removed as it is unused in UI
     relatedRecipesManual[]->{
       _id,
       title,

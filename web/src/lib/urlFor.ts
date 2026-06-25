@@ -11,9 +11,9 @@ const mockBuilder = {
   format: () => mockBuilder,
   quality: () => mockBuilder,
   url: () => '/favicon.svg',
-} as any;
+} as unknown as import("@sanity/image-url/lib/types/builder").ImageUrlBuilder;
 
-export function urlFor(source: any) {
+export function urlFor(source: import("./types").SanityImage) {
   if (!source || (typeof source === 'object' && !source.asset)) {
     return mockBuilder;
   }

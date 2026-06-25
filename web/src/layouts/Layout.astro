@@ -3,7 +3,7 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
-  schema?: Record<string, any>;
+  schema?: Record<string, unknown>;
 }
 
 const { title, description = "Discover delicious recipes styled visually to inspire your cooking.", image, schema } = Astro.props;
@@ -54,7 +54,7 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
 
     <!-- Schema.org Integration -->
     {schema && (
-      <script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+      <script type="application/ld+json" is:inline set:html={JSON.stringify(schema).replace(/</g, "\\u003c").replace(/&/g, "\\u0026")} />
     )}
     <!-- Custom Head Slot -->
     <slot name="head" />

@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ site }) => {
   try {
     const recipes = await client.fetch(ALL_RECIPES_QUERY);
 
-    const rssItems = recipes.map((recipe: any) => {
+    const rssItems = recipes.map((recipe: import("../lib/types").Recipe) => {
       const url = new URL(`recipe/${recipe.slug}`, site).toString();
       const pubDate = new Date(recipe.publishedAt).toUTCString();
       return `

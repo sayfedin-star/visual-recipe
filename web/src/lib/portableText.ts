@@ -30,7 +30,7 @@ function escapeAttribute(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function portableTextToHtml(blocks: any[]): string {
+export function portableTextToHtml(blocks: unknown[]): string {
   if (!blocks || !Array.isArray(blocks)) return '';
 
   let html = '';
@@ -76,7 +76,7 @@ export function portableTextToHtml(blocks: any[]): string {
           if (child.marks && Array.isArray(child.marks)) {
             for (const markKey of child.marks) {
               // Check if mark is an annotation defined in markDefs
-              const markDef = block.markDefs?.find((def: any) => def._key === markKey);
+              const markDef = block.markDefs?.find((def: Record<string, unknown>) => def._key === markKey);
               if (markDef && markDef._type === 'link') {
                 if (isSafeUrl(markDef.href)) {
                   const safeHref = escapeAttribute(markDef.href.trim());
