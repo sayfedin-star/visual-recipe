@@ -1,4 +1,5 @@
 ---
+import type { InstructionStep, Recipe, FAQItem, RoundupItem, IngredientGroup } from '../../lib/types';
 export const prerender = true;
 
 import Layout from '../../layouts/Layout.astro';
@@ -24,7 +25,7 @@ export async function getStaticPaths() {
       client.fetch(ALL_RECIPES_QUERY),
     ]);
     
-    return recipes.map((recipe: import("../lib/types").Recipe) => ({
+    return recipes.map((recipe: Recipe) => ({
       params: { slug: recipe.slug },
       props: { allClusters: clusters, allRecipes }
     }));
@@ -35,36 +36,54 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const { allClusters, allRecipes } = Astro.props;
+const { allClusters, allRecipes } = Astro.props as { allClusters: any[], allRecipes: import("../../lib/types").Recipe[] };
 
 // Fetch full recipe detail
-const recipe = await client.fetch(RECIPE_BY_SLUG_QUERY, { slug });
+let recipe: import("../../lib/types").Recipe | null = null;
+let relatedRecipes: import("../../lib/types").Recipe[] = [];
 
-if (!recipe) {
-  return Astro.redirect('/404');
-}
+try {
+  recipe = await client.fetch(RECIPE_BY_SLUG_QUERY, { slug });
 
-// Fetch related recipes (check manual overrides first, fallback to automatic)
-let relatedRecipes = recipe.relatedRecipesManual || [];
-if (relatedRecipes.length === 0 && recipe.parentCluster) {
-  relatedRecipes = await client.fetch(AUTO_RELATED_RECIPES_QUERY, {
-    recipeId: recipe._id,
-    parentId: recipe.parentCluster?._id || '',
-    subId: recipe.subCluster?._id || recipe.parentCluster?._id || ''
-  });
+  if (!recipe) {
+    return Astro.redirect('/404');
+  }
+
+  // Fetch related recipes (check manual overrides first, fallback to automatic)
+  relatedRecipes = (recipe.relatedRecipesManual || []) as import("../../lib/types").Recipe[];
+  if (relatedRecipes.length === 0 && recipe.parentCluster) {
+    relatedRecipes = await client.fetch(AUTO_RELATED_RECIPES_QUERY, {
+      recipeId: recipe._id,
+      parentId: recipe.parentCluster?._id || '',
+      subId: recipe.subCluster?._id || recipe.parentCluster?._id || ''
+    });
+  }
+} catch (error) {
+  console.error(`Failed to fetch recipe data for slug ${slug}:`, error);
+
+  // Provide meaningful fallback data so the page can render gracefully
+  recipe = {
+    _id: "error-fallback",
+    title: "Recipe Unavailable",
+    slug: slug || "fallback",
+    excerpt: "We're currently experiencing issues retrieving this recipe. Please check back later.",
+    mainImage: {} as any,
+    parentCluster: { _id: "error-cluster", title: "Fallback", slug: "fallback" }
+  };
+  relatedRecipes = [];
 }
 
 // Ensure at least 6 related recipes to meet the "internal link density of 6+ related recipes" requirement
 // Uses allRecipes from getStaticPaths (single fetch) instead of per-page API call (was O(N²))
 if (relatedRecipes.length < 6) {
   const fallbackItems = allRecipes
-    .filter((r: import("../lib/types").Recipe) => r._id !== recipe._id && !relatedRecipes.some((rel: import("../lib/types").Recipe) => rel._id === r._id))
+    .filter((r: any) => r._id !== recipe._id && !relatedRecipes.some((rel: any) => rel._id === r._id))
     .slice(0, 6 - relatedRecipes.length);
   relatedRecipes = [...relatedRecipes, ...fallbackItems];
 }
 
-const isPureRelated = recipe.parentCluster && relatedRecipes.every((r: import("../lib/types").Recipe) => r.parentCluster?.slug === recipe.parentCluster?.slug);
-const relatedSectionTitle = isPureRelated ? `More in ${recipe.parentCluster.title}` : 'More Recipes You\'ll Love';
+const isPureRelated = recipe.parentCluster && relatedRecipes.every((r: Recipe) => r.parentCluster?.slug === recipe.parentCluster?.slug);
+const relatedSectionTitle = isPureRelated ? `More in ${recipe.parentCluster?.title}` : 'More Recipes You\'ll Love';
 
 // Build structured SEO schemas (Recipe, ItemList/CollectionPage, & FAQPage)
 let recipeSchema: Record<string, unknown>;
@@ -76,7 +95,7 @@ if (recipe.publicationType === 'roundup') {
     "name": recipe.title,
     "description": recipe.excerpt,
     "numberOfItems": recipe.roundupItems?.length || 0,
-    "itemListElement": recipe.roundupItems?.map((item: import("../lib/types").RoundupItem, idx: number) => {
+    "itemListElement": recipe.roundupItems?.map((item: RoundupItem, idx: number) => {
       const targetUrl = item.externalUrl || `${Astro.site?.origin || 'https://nremi.com'}/recipe/${item.recipe?.slug}`;
       return {
         "@type": "ListItem",
@@ -104,8 +123,8 @@ if (recipe.publicationType === 'roundup') {
     "cookTime": recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
     "totalTime": (recipe.prepTime || recipe.cookTime) ? `PT${(recipe.prepTime || 0) + (recipe.cookTime || 0)}M` : undefined,
     "recipeYield": recipe.servings ? `${recipe.servings} servings` : undefined,
-    "recipeIngredient": recipe.ingredients?.flatMap((group: import("../lib/types").IngredientGroup) => group.items) || [],
-    "recipeInstructions": recipe.instructions?.map((step: import("../lib/types").InstructionStep, idx: number) => ({
+    "recipeIngredient": recipe.ingredients?.flatMap((group: IngredientGroup) => group.items) || [],
+    "recipeInstructions": recipe.instructions?.map((step: InstructionStep, idx: number) => ({
       "@type": "HowToStep",
       "position": step.stepNumber || (idx + 1),
       "text": step.instructionText,
@@ -115,7 +134,7 @@ if (recipe.publicationType === 'roundup') {
 
   // Append FAQ if available
   if (recipe.faq && recipe.faq.length > 0) {
-    recipeSchema["mainEntity"] = recipe.faq.map((item: import("../lib/types").FAQItem) => ({
+    recipeSchema["mainEntity"] = recipe.faq.map((item: FAQItem) => ({
       "@type": "Question",
       "name": item.question,
       "acceptedAnswer": {
@@ -206,7 +225,7 @@ const heroImageSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc
           <!-- FAQ Section -->
           {recipe.faq && recipe.faq.length > 0 && (
             <div class="recipe-faq-wrapper">
-              <FaqSection faq={recipe.faq} />
+              <FaqSection faq={recipe.faq as import("../../lib/types").FAQItem[]} />
             </div>
           )}
         </>

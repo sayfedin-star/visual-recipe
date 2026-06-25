@@ -30,7 +30,7 @@ function escapeAttribute(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function portableTextToHtml(blocks: unknown[]): string {
+export function portableTextToHtml(blocks: any[]): string {
   if (!blocks || !Array.isArray(blocks)) return '';
 
   let html = '';

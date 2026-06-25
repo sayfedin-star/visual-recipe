@@ -1,4 +1,5 @@
 ---
+import type { Recipe, Cluster } from '../lib/types';
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -12,8 +13,8 @@ import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
 import { urlFor } from '../lib/urlFor';
 
 // Fetch initial data at build-time (Static Generation)
-let recipes: import("../lib/types").Recipe[] = [];
-let clusters: import("../lib/types").Cluster[] = [];
+let recipes: Recipe[] = [];
+let clusters: Cluster[] = [];
 
 try {
   const [resRecipes, resClusters] = await Promise.all([
@@ -23,11 +24,13 @@ try {
   recipes = resRecipes;
   clusters = resClusters;
 } catch (err) {
-  console.warn("Sanity fetch failed on index page:", err);
+  console.error("Sanity fetch failed:", err);
+  recipes = [];
+  clusters = [{ _id: "error-fallback", title: "Error Loading Data", slug: "error" }];
 }
 
 // Filter out categories that are sub-clusters to keep the top bar clean (or show all)
-const parentClusters = clusters.filter((c: import("../lib/types").Cluster) => !c.parentCluster);
+const parentClusters = clusters.filter((c: Cluster) => !c.parentCluster);
 
 // Preload the first recipe image in the feed (LCP element) using Sanity CDN URLs directly
 const IMAGE_QUALITY = 65;

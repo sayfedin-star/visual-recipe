@@ -1,3 +1,4 @@
+import type { Recipe } from '../lib/types';
 export const prerender = true;
 
 import type { APIRoute } from 'astro';
@@ -10,7 +11,7 @@ export const GET: APIRoute = async () => {
     const recipes = await client.fetch(SEARCH_INDEX_QUERY);
     
     // Transform or select exactly what the search client needs to minimize bundle size
-    const searchData = recipes.map((recipe: import("../lib/types").Recipe) => ({
+    const searchData = recipes.map((recipe: Recipe) => ({
       id: recipe._id,
       title: recipe.title,
       slug: recipe.slug,

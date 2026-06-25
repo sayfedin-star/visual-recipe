@@ -1,4 +1,5 @@
 ---
+import type { SanityImage as SanityImageType } from '../lib/types';
 import SanityImage from './SanityImage.astro';
 import { getRecipeRating } from '../lib/sanity';
 
@@ -8,7 +9,7 @@ interface Props {
       _id: string;
       title: string;
       slug: string;
-      mainImage: import("../lib/types").SanityImage;
+      mainImage: SanityImageType;
       excerpt: string;
       badges?: string[];
       prepTime?: number;
@@ -16,7 +17,7 @@ interface Props {
     };
     title?: string;
     description: string;
-    image?: import("../lib/types").SanityImage;
+    image?: SanityImageType;
     externalUrl?: string;
     customCta?: string;
     imageDisplayMode?: 'cover' | 'contain' | 'original';
@@ -28,7 +29,7 @@ const { items = [], prioritizeFirst = false } = Astro.props;
 
 
 // Helper to extract dimensions from Sanity image asset ID/reference
-function getSanityImageDimensions(source: import("../lib/types").SanityImage) {
+function getSanityImageDimensions(source: any) {
   if (!source) return null;
   let ref = '';
   if (typeof source === 'string') {
@@ -36,7 +37,7 @@ function getSanityImageDimensions(source: import("../lib/types").SanityImage) {
   } else if (source.asset && typeof source.asset._ref === 'string') {
     ref = source.asset._ref;
   } else if (source.asset && typeof source.asset._id === 'string') {
-    ref = source.asset._id;
+    ref = source.asset._id || '';
   }
   
   if (!ref) return null;

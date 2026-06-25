@@ -2,6 +2,7 @@ export interface SanityImage {
   _type?: 'image';
   asset?: {
     _ref: string;
+    _id?: string;
     _type: 'reference';
   };
   alt?: string;
@@ -25,13 +26,13 @@ export interface IngredientGroup {
 
 export interface InstructionStep {
   stepNumber: number;
-  instructionText: unknown[]; // Portable text blocks
+  instructionText: any; // Portable text blocks
   stepImage?: SanityImage;
 }
 
 export interface FAQItem {
   question: string;
-  answer: unknown[]; // Portable text blocks
+  answer: any; // Portable text blocks
 }
 
 export interface RoundupItem {

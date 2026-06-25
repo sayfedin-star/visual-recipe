@@ -1,3 +1,4 @@
+import type { SanityImage } from './types';
 import imageUrlBuilder from '@sanity/image-url';
 import { client } from './sanity';
 
@@ -13,7 +14,7 @@ const mockBuilder = {
   url: () => '/favicon.svg',
 } as unknown as import("@sanity/image-url/lib/types/builder").ImageUrlBuilder;
 
-export function urlFor(source: import("./types").SanityImage) {
+export function urlFor(source: SanityImage) {
   if (!source || (typeof source === 'object' && !source.asset)) {
     return mockBuilder;
   }

@@ -1,4 +1,5 @@
 ---
+import type { SanityImage as SanityImageType } from '../lib/types';
 import SanityImage from './SanityImage.astro';
 
 interface Props {
@@ -7,7 +8,7 @@ interface Props {
     title: string;
     slug: string;
     excerpt: string;
-    mainImage: import("../lib/types").SanityImage;
+    mainImage: SanityImageType;
     cardAspectRatio?: 'standard' | 'tall' | 'super-tall';
     badges?: string[];
     intentTags?: string[];

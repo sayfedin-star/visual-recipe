@@ -1,8 +1,9 @@
 ---
+import type { SanityImage } from '../lib/types';
 import { urlFor } from '../lib/urlFor';
 
 interface Props {
-  src: import("../lib/types").SanityImage;
+  src: SanityImage;
   alt: string;
   width?: number;
   height?: number;

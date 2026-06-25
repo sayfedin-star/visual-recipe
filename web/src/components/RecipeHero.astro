@@ -1,11 +1,12 @@
 ---
+import type { SanityImage as SanityImageType } from '../lib/types';
 import SanityImage from './SanityImage.astro';
 import { getRecipeRating } from '../lib/sanity';
 
 interface Props {
   title: string;
   excerpt: string;
-  mainImage: import("../lib/types").SanityImage;
+  mainImage: SanityImageType;
   hideMainImage?: boolean;
   customCtaUrl?: string;
   prepTime?: number;
