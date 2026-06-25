@@ -12,8 +12,8 @@ import { ALL_RECIPES_QUERY, ALL_CLUSTERS_QUERY } from '../lib/queries';
 import { urlFor } from '../lib/urlFor';
 
 // Fetch initial data at build-time (Static Generation)
-let recipes: any[] = [];
-let clusters: any[] = [];
+let recipes: import("../lib/types").Recipe[] = [];
+let clusters: import("../lib/types").Cluster[] = [];
 
 try {
   const [resRecipes, resClusters] = await Promise.all([
@@ -27,7 +27,7 @@ try {
 }
 
 // Filter out categories that are sub-clusters to keep the top bar clean (or show all)
-const parentClusters = clusters.filter((c: any) => !c.parentCluster);
+const parentClusters = clusters.filter((c: import("../lib/types").Cluster) => !c.parentCluster);
 
 // Preload the first recipe image in the feed (LCP element) using Sanity CDN URLs directly
 const IMAGE_QUALITY = 65;

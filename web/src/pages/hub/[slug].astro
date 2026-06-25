@@ -14,7 +14,7 @@ import { urlFor } from '../../lib/urlFor';
 export async function getStaticPaths() {
   try {
     const clusters = await client.fetch(ALL_CLUSTERS_QUERY);
-    return clusters.map((cluster: any) => ({
+    return clusters.map((cluster: import("../lib/types").Cluster) => ({
       params: { slug: cluster.slug },
       props: { allClusters: clusters }
     }));
@@ -25,7 +25,7 @@ export async function getStaticPaths() {
 }
 
 interface Props {
-  allClusters: any[];
+  allClusters: import("../lib/types").Cluster[];
 }
 
 const { slug } = Astro.params;

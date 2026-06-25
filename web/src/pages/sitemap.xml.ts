@@ -13,14 +13,14 @@ export const GET: APIRoute = async ({ site }) => {
 
     const today = new Date().toISOString().split('T')[0];
 
-    const recipeEntries = recipes.map((r: any) => ({
+    const recipeEntries = recipes.map((r: import("../lib/types").Recipe) => ({
       url: new URL(`recipe/${r.slug}`, site).toString(),
       lastmod: r.publishedAt ? new Date(r.publishedAt).toISOString().split('T')[0] : today,
       priority: '0.6',
       changefreq: 'weekly'
     }));
 
-    const clusterEntries = clusters.map((c: any) => ({
+    const clusterEntries = clusters.map((c: import("../lib/types").Cluster) => ({
       url: new URL(`hub/${c.slug}`, site).toString(),
       lastmod: today,
       priority: '0.8',

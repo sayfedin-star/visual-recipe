@@ -15,7 +15,7 @@ try {
 } catch (err) {
   console.warn("Sanity fetch failed on search page:", err);
 }
-const parentClusters = clusters.filter((c: any) => !c.parentCluster);
+const parentClusters = clusters.filter((c: import("../lib/types").Cluster) => !c.parentCluster);
 ---
 
 <Layout 
@@ -46,7 +46,7 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
             <label for="select-cluster" class="label">Cluster</label>
             <select id="select-cluster" class="select">
               <option value="all">All Clusters</option>
-              {parentClusters.map((c: any) => (
+              {parentClusters.map((c: import("../lib/types").Cluster) => (
                 <option value={c.slug}>{c.title}</option>
               ))}
             </select>
@@ -97,7 +97,7 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
       <!-- Card image container -->
       <div class="image-container">
         <a href="" class="image-link">
-          <img src="" alt="" class="card-img" loading="lazy" decoding="async" />
+          <img class="card-img" src="" alt="" width="400" height="300" loading="lazy" decoding="async" />
           <!-- Hover Overlay -->
           <div class="hover-overlay">
             <span class="view-btn">View Recipe</span>
@@ -304,7 +304,7 @@ const parentClusters = clusters.filter((c: any) => !c.parentCluster);
   }
 
   // Bind Listeners
-  let debounceTimer: any;
+  let debounceTimer: ReturnType<typeof setTimeout>;
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       // Update URL without reloading page
