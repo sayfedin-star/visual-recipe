@@ -1,3 +1,35 @@
+function isSafeUrl(url: string): boolean {
+  if (!url) return false;
+
+  const trimmedUrl = url.trim();
+
+  // Deny protocol-relative URLs (starts with //)
+  if (trimmedUrl.startsWith('//')) {
+    return false;
+  }
+
+  // Allow relative URLs starting with / or ./
+  if (trimmedUrl.startsWith('/') || trimmedUrl.startsWith('./')) {
+    return true;
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedUrl);
+    const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:'];
+    return allowedProtocols.includes(parsedUrl.protocol);
+  } catch (e) {
+    // If new URL() throws, it's an invalid URL (e.g. malformed or missing base)
+    return false;
+  }
+}
+
+function escapeAttribute(value: string): string {
+  if (!value) return '';
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;');
+}
+
 export function portableTextToHtml(blocks: any[]): string {
   if (!blocks || !Array.isArray(blocks)) return '';
 
@@ -46,7 +78,10 @@ export function portableTextToHtml(blocks: any[]): string {
               // Check if mark is an annotation defined in markDefs
               const markDef = block.markDefs?.find((def: any) => def._key === markKey);
               if (markDef && markDef._type === 'link') {
-                text = `<a href="${markDef.href}" class="roundup-link" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                if (isSafeUrl(markDef.href)) {
+                  const safeHref = escapeAttribute(markDef.href.trim());
+                  text = `<a href="${safeHref}" class="roundup-link" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                }
               } else if (markKey === 'strong') {
                 text = `<strong>${text}</strong>`;
               } else if (markKey === 'em') {
