@@ -173,11 +173,11 @@ const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
               alt={mainImage?.alt || title}
               width={600}
               height={900}
-              sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, calc(100vw - 48px)"
+              sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, (min-width: 480px) 360px, calc(100vw - 48px)"
               class="hero-img"
               loading="eager"
               fetchpriority="high"
-              widths={[360, 540, 720, 750, 900, 1080]}
+              widths={[300, 360, 540, 720, 750, 900, 1080]}
             />
             <div class="image-overlay">
               <span class="jump-label">
