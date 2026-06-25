@@ -1,10 +1,11 @@
 ---
+import type { SanityImage as SanityImageType } from '../lib/types';
 import SanityImage from './SanityImage.astro';
 
 interface Step {
   stepNumber?: number;
-  instructionText: string;
-  stepImage?: import("../lib/types").SanityImage;
+  instructionText: unknown[];
+  stepImage?: SanityImageType;
 }
 
 interface Props {

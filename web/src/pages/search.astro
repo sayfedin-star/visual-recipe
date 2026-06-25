@@ -1,4 +1,5 @@
 ---
+import type { Cluster } from '../lib/types';
 export const prerender = true;
 
 import Layout from '../layouts/Layout.astro';
@@ -13,9 +14,10 @@ let clusters = [];
 try {
   clusters = await client.fetch(ALL_CLUSTERS_QUERY);
 } catch (err) {
-  console.warn("Sanity fetch failed on search page:", err);
+  console.error("Sanity fetch failed:", err);
+  clusters = [{ _id: "error-fallback", title: "Error Loading Data", slug: "error" }];
 }
-const parentClusters = clusters.filter((c: import("../lib/types").Cluster) => !c.parentCluster);
+const parentClusters = clusters.filter((c: Cluster) => !c.parentCluster);
 ---
 
 <Layout 
@@ -46,7 +48,7 @@ const parentClusters = clusters.filter((c: import("../lib/types").Cluster) => !c
             <label for="select-cluster" class="label">Cluster</label>
             <select id="select-cluster" class="select">
               <option value="all">All Clusters</option>
-              {parentClusters.map((c: import("../lib/types").Cluster) => (
+              {parentClusters.map((c: Cluster) => (
                 <option value={c.slug}>{c.title}</option>
               ))}
             </select>

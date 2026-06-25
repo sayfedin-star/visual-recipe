@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Page Not Found" description="We couldn't find the page you're looking for.">
+  <Header />
+  <main style="max-width: 800px; margin: 4rem auto; text-align: center;">
+    <h1 style="font-size: 3rem; margin-bottom: 1rem;">404 - Not Found</h1>
+    <p style="font-size: 1.25rem; color: #5f5f5f; margin-bottom: 2rem;">We couldn't find the page or recipe you're looking for. It might have been moved or deleted.</p>
+    <a href="/" style="display: inline-block; background-color: #e60023; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; text-decoration: none;">Return Home</a>
+  </main>
+  <Footer />
+</Layout>

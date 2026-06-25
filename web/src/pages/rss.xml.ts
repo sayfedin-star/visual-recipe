@@ -1,3 +1,4 @@
+import type { Recipe } from '../lib/types';
 export const prerender = true;
 
 import type { APIRoute } from 'astro';
@@ -8,9 +9,9 @@ export const GET: APIRoute = async ({ site }) => {
   try {
     const recipes = await client.fetch(ALL_RECIPES_QUERY);
 
-    const rssItems = recipes.map((recipe: import("../lib/types").Recipe) => {
+    const rssItems = recipes.map((recipe: Recipe) => {
       const url = new URL(`recipe/${recipe.slug}`, site).toString();
-      const pubDate = new Date(recipe.publishedAt).toUTCString();
+      const pubDate = new Date(recipe.publishedAt || Date.now()).toUTCString();
       return `
     <item>
       <title><![CDATA[${recipe.title}]]></title>
