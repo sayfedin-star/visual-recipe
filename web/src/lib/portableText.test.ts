@@ -48,7 +48,8 @@ test('portableTextToHtml - Unsafe URLs are rendered as plain text', () => {
     'data:text/html,<script>alert("xss")</script>',
     'vbscript:msgbox("xss")',
     '  javascript:alert(1)',
-    'Javascript:alert(1)'
+    'Javascript:alert(1)',
+    '//evil.com/phishing'
   ];
 
   for (const url of unsafeUrls) {
@@ -57,4 +58,12 @@ test('portableTextToHtml - Unsafe URLs are rendered as plain text', () => {
     assert.ok(!html.includes('<a'), `Unsafe URL ${url} should NOT generate an <a> tag`);
     assert.ok(html.includes('Click here'), `Unsafe URL ${url} should still render the text content`);
   }
+});
+
+test('portableTextToHtml - Escapes attributes to prevent injection', () => {
+  const maliciousHref = '/recipe/pasta" onclick="alert(1)';
+  const blocks = createLinkBlock(maliciousHref, 'Click here');
+  const html = portableTextToHtml(blocks);
+  assert.ok(html.includes('href="/recipe/pasta&quot; onclick=&quot;alert(1)"'), `Attributes should be escaped properly`);
+  assert.ok(!html.includes(' onclick="'), `Should not contain raw onclick attribute`);
 });
