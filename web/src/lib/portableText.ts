@@ -30,15 +30,27 @@ function escapeAttribute(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function portableTextToHtml(blocks: any[]): string {
+
+interface PortableTextBlock {
+  _type: string;
+  style?: string;
+  listItem?: string;
+  children?: any[];
+  markDefs?: any[];
+  [key: string]: unknown;
+}
+
+export function portableTextToHtml(blocks: unknown[]): string {
   if (!blocks || !Array.isArray(blocks)) return '';
 
   let html = '';
   let inList = false;
   let listType = ''; // 'bullet' or 'number'
 
-  for (const block of blocks) {
+  for (const rawBlock of blocks) {
+    const block = rawBlock as PortableTextBlock;
     if (block._type !== 'block') {
+
       continue;
     }
 
@@ -52,7 +64,7 @@ export function portableTextToHtml(blocks: any[]): string {
 
     // Open new list if we transitioned in
     if (isListItem && !inList) {
-      listType = block.listItem;
+      listType = block.listItem || '';
       html += listType === 'number' ? '<ol class="roundup-ol">' : '<ul class="roundup-ul">';
       inList = true;
     }

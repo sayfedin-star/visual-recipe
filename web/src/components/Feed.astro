@@ -65,7 +65,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
   const feed = document.getElementById('recipes-feed');
 
   if (loadMoreBtn && feed) {
-    let remainingRecipes: any[] = [];
+    let remainingRecipes: import("../lib/types").Recipe[] = [];
     let isLoaded = false;
     const step = 8;
     let currentIndex = 0;
@@ -83,8 +83,8 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
       'super-tall': 'aspect-[1/2]',
     };
 
-    function buildCardHTML(r: any): string {
-      const aspect = aspectMap[r.cardAspectRatio] || 'aspect-[2/3]';
+    function buildCardHTML(r: import("../lib/types").Recipe): string {
+      const aspect = aspectMap[r.cardAspectRatio || "tall"] || 'aspect-[2/3]';
       const aspectHeight = r.cardAspectRatio === 'standard' ? 300 : r.cardAspectRatio === 'super-tall' ? 800 : 600;
       const imgSrc = r.imageUrl || '/favicon.svg';
       let imgSrcSet = '';
@@ -94,7 +94,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
       }
       const sizes = "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw";
       const clusterBadge = r.parentCluster
-        ? `<a href="/hub/${escapeHtml(r.parentClusterSlug)}" class="category-badge">${escapeHtml(r.parentCluster)}</a>`
+        ? `<a href="/hub/${escapeHtml(r.parentClusterSlug || "")}" class="category-badge">${escapeHtml(r.parentCluster.title)}</a>`
         : '';
       const roundupBadge = r.publicationType === 'roundup'
         ? `<span class="roundup-badge">Round-Up</span>`
@@ -104,7 +104,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
         .join('');
 
       return `
-        <article class="recipe-card" data-recipe-id="${escapeHtml(r.id)}">
+        <article class="recipe-card" data-recipe-id="${escapeHtml(r.id || "")}">
           <div class="image-container ${aspect}">
             <a href="/recipe/${escapeHtml(r.slug)}" class="image-link"
                aria-label="View recipe instructions for ${escapeHtml(r.title)}">
@@ -151,8 +151,8 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
           filterClusterSlug = pathParts[hubIndex + 1];
         }
 
-        remainingRecipes = allRecipes.filter((r: any) => {
-          if (renderedIds.has(r.id)) return false;
+        remainingRecipes = allRecipes.filter((r: import("../lib/types").Recipe) => {
+          if (renderedIds.has(r.id || '')) return false;
           if (filterClusterSlug && r.parentClusterSlug !== filterClusterSlug) return false;
           return true;
         });
@@ -182,7 +182,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
         wrapper.innerHTML = buildCardHTML(r);
 
         // Sync saved state on newly generated card
-        if (savedList.includes(r.id)) {
+        if (savedList.includes(r.id || '')) {
           const saveBtn = wrapper.querySelector('[data-save-btn]');
           if (saveBtn) {
             saveBtn.classList.add('saved');

@@ -26,13 +26,13 @@ export interface IngredientGroup {
 
 export interface InstructionStep {
   stepNumber: number;
-  instructionText: any; // Portable text blocks
+  instructionText: unknown[]; // Portable text blocks
   stepImage?: SanityImage;
 }
 
 export interface FAQItem {
   question: string;
-  answer: any; // Portable text blocks
+  answer: unknown[]; // Portable text blocks
 }
 
 export interface RoundupItem {

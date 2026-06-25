@@ -36,7 +36,7 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
-const { allClusters, allRecipes } = Astro.props as { allClusters: any[], allRecipes: import("../../lib/types").Recipe[] };
+const { allClusters, allRecipes } = Astro.props as { allClusters: import("../../lib/types").Cluster[], allRecipes: import("../../lib/types").Recipe[] };
 
 // Fetch full recipe detail
 let recipe: import("../../lib/types").Recipe | null = null;
@@ -67,7 +67,7 @@ try {
     title: "Recipe Unavailable",
     slug: slug || "fallback",
     excerpt: "We're currently experiencing issues retrieving this recipe. Please check back later.",
-    mainImage: {} as any,
+    mainImage: {} as import("../../lib/types").SanityImage,
     parentCluster: { _id: "error-cluster", title: "Fallback", slug: "fallback" }
   };
   relatedRecipes = [];
@@ -77,7 +77,7 @@ try {
 // Uses allRecipes from getStaticPaths (single fetch) instead of per-page API call (was O(N²))
 if (relatedRecipes.length < 6) {
   const fallbackItems = allRecipes
-    .filter((r: any) => r._id !== recipe._id && !relatedRecipes.some((rel: any) => rel._id === r._id))
+    .filter((r: import("../../lib/types").Recipe) => r._id !== recipe._id && !relatedRecipes.some((rel: import("../../lib/types").Recipe) => rel._id === r._id))
     .slice(0, 6 - relatedRecipes.length);
   relatedRecipes = [...relatedRecipes, ...fallbackItems];
 }

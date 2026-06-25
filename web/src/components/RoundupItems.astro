@@ -29,7 +29,7 @@ const { items = [], prioritizeFirst = false } = Astro.props;
 
 
 // Helper to extract dimensions from Sanity image asset ID/reference
-function getSanityImageDimensions(source: any) {
+function getSanityImageDimensions(source: import("../lib/types").SanityImage | undefined) {
   if (!source) return null;
   let ref = '';
   if (typeof source === 'string') {
