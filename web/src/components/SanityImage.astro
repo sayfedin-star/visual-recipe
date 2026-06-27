@@ -60,6 +60,6 @@ const defaultSrc = defaultBuilder.auto('format').quality(IMAGE_QUALITY).url();
   height={displayHeight}
   class={className}
   loading={loading}
-  decoding="async"
+  decoding={fetchpriority === 'high' ? 'sync' : 'async'}
   fetchpriority={fetchpriority}
 />
