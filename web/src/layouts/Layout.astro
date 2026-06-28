@@ -413,4 +413,25 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
   .h-3\.5 {
     height: 0.875rem !important;
   }
+
+  /* --- Mobile UX: Touch Devices --- */
+  @media (hover: none) {
+    /* Hide "View Recipe" overlay on touch devices (no hover available) */
+    .hover-overlay {
+      display: none;
+    }
+
+    /* Always show ♥ save button on mobile */
+    .save-btn {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* Override any parent hover-dependent visibility */
+    .recipe-card .save-btn,
+    .recipe-card:not(:hover) .save-btn {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+  }
 </style>
