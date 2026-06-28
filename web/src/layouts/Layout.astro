@@ -276,7 +276,14 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
     height: 38px;
     box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.25s ease, background-color 0.2s, color 0.2s, transform 0.2s;
+  }
+
+  /* Show save button on card hover (desktop) */
+  .recipe-card:hover .save-btn {
+    opacity: 1;
   }
 
   .save-btn:hover {
@@ -284,10 +291,11 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
     background-color: #ffffff;
   }
 
-  /* Saved state */
+  /* Saved state — always visible regardless of hover */
   .save-btn.saved {
     background-color: var(--color-primary);
     color: #ffffff;
+    opacity: 1;
   }
 
   /* Floating tags */
@@ -418,20 +426,16 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
   @media (hover: none) {
     /* Hide "View Recipe" overlay on touch devices (no hover available) */
     .hover-overlay {
-      display: none;
+      display: none !important;
     }
 
     /* Always show ♥ save button on mobile */
     .save-btn {
+      display: flex !important;
       opacity: 1 !important;
       visibility: visible !important;
-    }
-
-    /* Override any parent hover-dependent visibility */
-    .recipe-card .save-btn,
-    .recipe-card:not(:hover) .save-btn {
-      opacity: 1 !important;
-      visibility: visible !important;
+      pointer-events: auto !important;
+      z-index: 30 !important;
     }
   }
 </style>
