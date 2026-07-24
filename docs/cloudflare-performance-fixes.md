@@ -1,40 +1,33 @@
-# Web Performance Fixes (Cloudflare / External)
+# Cloudflare Performance Fixes
 
-## Clarity Delayed Loading via Zaraz
+## Microsoft Clarity Deferral (Zaraz)
+To reduce Total Blocking Time (TBT) caused by the Microsoft Clarity script without losing analytics, it should be deferred rather than loaded on initial pageview. The script currently contributes ~66ms main-thread blocking time during load.
 
-**Problem:** Zaraz injects Clarity immediately on page load, creating a
-6-request chain (including 2 cross-domain 302 redirects via c.bing.com)
-that keeps the network waterfall open until ~6,200ms, even though the
-page is visually complete at 2,600ms.
+### Cloudflare Dashboard Steps
+1. Open Cloudflare and select the `nremi.com` domain.
+2. Navigate to **Zaraz** -> **Tools** -> **Microsoft Clarity**.
+3. Change the load trigger from **Pageview / immediate load** to one of the following:
+   - **Scroll depth 25%**
+   - **First click / interaction**
 
-**Fix in Cloudflare Zaraz Dashboard:**
-1. Go to Cloudflare Dashboard → Websites → [your domain] → Zaraz
-2. Find the "Microsoft Clarity" tool
-3. Click on it → go to "Loading Rules" or "Triggers"
-4. Change the trigger from "Pageview" to one of:
-   - "After 3 seconds delay" (recommended)
-   - "On first user interaction" (scroll, click, mousemove)
-5. Save and deploy
+### Notes
+- **Do not** add Microsoft Clarity snippets into the Astro repository. It must remain exclusively in Zaraz to avoid duplicate execution.
+- **Do not** enable Rocket Loader as a "fix" for TBT, as it can cause unexpected script execution behavior.
+- This PR **does not** include a Sanity image proxy via Cloudflare Workers. It strictly addresses TBT and Cloudflare Edge/Browser caching (`_headers`).
 
-**Expected impact:** fullyLoaded drops from ~6,200ms to ~3,500ms.
-LCP and FCP are unaffected (Clarity is non-blocking), but lab scores
-like Speed Index and Time to Interactive will improve.
+## Post-Deploy Verification
 
----
+After this PR is merged and deployed, verify the new `_headers` cache rules are active by running the following commands in a terminal:
 
-## Layout CPU Time (Future Investigation)
+```bash
+# Check the homepage (Expect max-age=3600, s-maxage=86400)
+curl -sI "https://nremi.com/" | egrep -i 'cache-control|cf-cache-status'
 
-**Observation:** `cpuTimes.Layout = 281ms` which is abnormally high
-compared to `EvaluateScript = 64ms`. This suggests complex CSS
-recalculation during initial render, likely in the recipe list or
-hero section.
+# Check a recipe page (Expect max-age=86400, s-maxage=604800)
+curl -sI "https://nremi.com/recipe/<any-live-slug>/" | egrep -i 'cache-control|cf-cache-status'
 
-**Recommended next step (requires DevTools):**
-- Open Chrome DevTools → Performance tab
-- Record with CPU 4x slowdown + Fast 3G throttling
-- Look for "Recalculate Style" and "Layout" events in the flame chart
-- Identify which component triggers the longest layout block
+# Check an Astro asset (Expect max-age=31536000, immutable)
+curl -sI "https://nremi.com/_astro/<any-hashed-asset.css>" | egrep -i 'cache-control|cf-cache-status'
+```
 
-Do not apply `content-visibility: auto` until element heights
-are explicitly set (width + height or aspect-ratio) on all
-affected containers to prevent CLS regression.
+On consecutive requests to the same URL, `cf-cache-status` should eventually trend towards `HIT`.

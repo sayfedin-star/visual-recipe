@@ -62,48 +62,56 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
 
     <!-- LocalStorage Save Recipes Synchronization Script -->
     <script>
-      let savedList: string[] = [];
-      try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
-      document.querySelectorAll('[data-recipe-id]').forEach((card) => {
-        const recipeId = card.getAttribute('data-recipe-id');
-        if (recipeId && savedList.includes(recipeId)) {
-          const saveBtn = card.querySelector('[data-save-btn]');
-          if (saveBtn) {
-            saveBtn.classList.add('saved');
-          }
-        }
-      });
-
-      // Event delegation for save buttons
-      document.addEventListener('click', (e) => {
-        const saveBtn = (e.target as HTMLElement).closest('[data-save-btn]');
-        if (saveBtn) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          const card = saveBtn.closest('[data-recipe-id]');
-          const recipeId = card ? card.getAttribute('data-recipe-id') : null;
-
-          if (recipeId) {
-            let saved: string[] = [];
-            try { saved = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
-            saveBtn.classList.toggle('saved');
-            const isSaved = saveBtn.classList.contains('saved');
-
-            if (isSaved) {
-              if (!saved.includes(recipeId)) {
-                saved.push(recipeId);
-              }
-            } else {
-              saved = saved.filter((id: string) => id !== recipeId);
+      function initSavedRecipes() {
+        let savedList: string[] = [];
+        try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
+        document.querySelectorAll('[data-recipe-id]').forEach((card) => {
+          const recipeId = card.getAttribute('data-recipe-id');
+          if (recipeId && savedList.includes(recipeId)) {
+            const saveBtn = card.querySelector('[data-save-btn]');
+            if (saveBtn) {
+              saveBtn.classList.add('saved');
             }
-            try { localStorage.setItem('saved-recipes', JSON.stringify(saved)); } catch {}
-            
-            // Trigger a custom event to notify other components (like Saved board page)
-            document.dispatchEvent(new CustomEvent('saved-recipes-changed', { detail: { recipeId, isSaved } }));
           }
-        }
-      });
+        });
+
+        // Event delegation for save buttons
+        document.addEventListener('click', (e) => {
+          const saveBtn = (e.target as HTMLElement).closest('[data-save-btn]');
+          if (saveBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const card = saveBtn.closest('[data-recipe-id]');
+            const recipeId = card ? card.getAttribute('data-recipe-id') : null;
+
+            if (recipeId) {
+              let saved: string[] = [];
+              try { saved = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
+              saveBtn.classList.toggle('saved');
+              const isSaved = saveBtn.classList.contains('saved');
+
+              if (isSaved) {
+                if (!saved.includes(recipeId)) {
+                  saved.push(recipeId);
+                }
+              } else {
+                saved = saved.filter((id: string) => id !== recipeId);
+              }
+              try { localStorage.setItem('saved-recipes', JSON.stringify(saved)); } catch {}
+
+              // Trigger a custom event to notify other components (like Saved board page)
+              document.dispatchEvent(new CustomEvent('saved-recipes-changed', { detail: { recipeId, isSaved } }));
+            }
+          }
+        });
+      }
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(initSavedRecipes);
+      } else {
+        setTimeout(initSavedRecipes, 100);
+      }
     </script>
   </body>
 </html>
