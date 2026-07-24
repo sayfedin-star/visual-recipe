@@ -41,7 +41,9 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
     <meta property="twitter:image" content={shareImage} />
 
     <!-- Fonts - Reduced to only weights actually used in the design system -->
-    <link rel="preconnect" href="https://cdn.sanity.io">
+    <link rel="preconnect" href="https://cdn.sanity.io" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.sanity.io">
+    <slot name="head" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;700;800&display=swap">

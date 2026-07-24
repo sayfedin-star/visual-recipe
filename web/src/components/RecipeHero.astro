@@ -2,6 +2,7 @@
 import type { SanityImage as SanityImageType } from '../lib/types';
 import SanityImage from './SanityImage.astro';
 import { getRecipeRating } from '../lib/sanity';
+import { urlFor } from '../lib/urlFor';
 
 interface Props {
   title: string;
@@ -51,7 +52,35 @@ const isExternal = (url: string) => {
 
 const ctaHref = customCtaUrl || `#${jumpToRecipeAnchor}`;
 const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
+
+const lcpSizes = "(min-width: 1280px) 500px, (min-width: 768px) 45vw, (min-width: 480px) 360px, calc(100vw - 48px)";
+
+let lcpPreloadUrl = null;
+let lcpSrcSet = null;
+
+if (!hideMainImage && mainImage && typeof mainImage === 'object' && mainImage.asset) {
+  // Using the exact logic from SanityImage.astro to match src and srcset
+  const aspect = 600 / 900;
+  const IMAGE_QUALITY = 65;
+  const imgWidth = 750;
+
+  lcpPreloadUrl = urlFor(mainImage).width(imgWidth).height(Math.round(imgWidth / aspect)).fit('crop').auto('format').quality(IMAGE_QUALITY).url();
+
+  const lcpWidths = [360, 750, 900];
+  lcpSrcSet = lcpWidths
+    .map(w => {
+      let imgBuilder = urlFor(mainImage).width(w).height(Math.round(w / aspect)).fit('crop');
+      return `${imgBuilder.auto('format').quality(IMAGE_QUALITY).url()} ${w}w`;
+    })
+    .join(', ');
+}
 ---
+
+<Fragment slot="head">
+  {lcpPreloadUrl && (
+    <link rel="preload" as="image" href={lcpPreloadUrl} imagesrcset={lcpSrcSet} imagesizes={lcpSizes} fetchpriority="high" />
+  )}
+</Fragment>
 
 <section class="recipe-hero-section" data-recipe-id={recipeId}>
   <div class={`hero-grid ${hideMainImage ? 'no-image' : ''}`}>
@@ -173,11 +202,12 @@ const isCtaExternal = customCtaUrl ? isExternal(customCtaUrl) : false;
               alt={mainImage?.alt || title}
               width={600}
               height={900}
-              sizes="(min-width: 1280px) 500px, (min-width: 768px) 45vw, (min-width: 480px) 360px, calc(100vw - 48px)"
+              sizes={lcpSizes}
               class="hero-img"
               loading="eager"
               fetchpriority="high"
-              widths={[300, 360, 540, 720, 750, 900, 1080]}
+              decoding="async"
+              widths={[360, 750, 900]}
             />
             <div class="image-overlay">
               <span class="jump-label">

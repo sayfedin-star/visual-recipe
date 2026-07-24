@@ -11,10 +11,11 @@ interface Props {
   class?: string;
   loading?: "lazy" | "eager";
   fetchpriority?: "high" | "low" | "auto";
+  decoding?: "async" | "sync" | "auto";
   widths?: number[];
 }
 
-const { src, alt, width, height, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority, widths: customWidths } = Astro.props;
+const { src, alt, width, height, sizes = "(min-width: 1200px) 1200px, 100vw", class: className = "", loading = "lazy", fetchpriority, widths: customWidths, decoding = "async" } = Astro.props;
 
 if (!src) {
   return null;
@@ -60,6 +61,6 @@ const defaultSrc = defaultBuilder.auto('format').quality(IMAGE_QUALITY).url();
   height={displayHeight}
   class={className}
   loading={loading}
-  decoding="async"
+  decoding={decoding}
   fetchpriority={fetchpriority}
 />
