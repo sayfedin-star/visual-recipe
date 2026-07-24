@@ -50,9 +50,11 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
 
       {recipes.length > initialCount && (
         <div class="feed-actions" id="load-more-container">
-          <button id="load-more-btn" class="load-more-button">
+          <div id="feed-sentinel" class="feed-sentinel" aria-hidden="true"></div>
+          <button id="load-more-btn" class="load-more-button" type="button">
             Discover More Recipes
           </button>
+          <p id="feed-status" class="sr-only" aria-live="polite"></p>
         </div>
       )}
     </>
@@ -60,13 +62,19 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
 </div>
 
 <script>
-  const loadMoreBtn = document.getElementById('load-more-btn');
+
+  const loadMoreBtn = document.getElementById('load-more-btn') as HTMLButtonElement;
   const loadMoreContainer = document.getElementById('load-more-container');
   const feed = document.getElementById('recipes-feed');
+  const sentinel = document.getElementById('feed-sentinel');
+  const status = document.getElementById('feed-status');
 
   if (loadMoreBtn && feed) {
+    let recipesCache: import("../lib/types").Recipe[] | null = null;
     let remainingRecipes: import("../lib/types").Recipe[] = [];
     let isLoaded = false;
+    let loadingPromise: Promise<void> | null = null;
+    let isAppending = false;
     const step = 8;
     let currentIndex = 0;
 
@@ -85,6 +93,7 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
 
     function buildCardHTML(r: import("../lib/types").Recipe): string {
       const aspect = aspectMap[r.cardAspectRatio || "tall"] || 'aspect-[2/3]';
+      const aspectWidth = 400;
       const aspectHeight = r.cardAspectRatio === 'standard' ? 300 : r.cardAspectRatio === 'super-tall' ? 800 : 600;
       const imgSrc = r.imageUrl || '/favicon.svg';
       let imgSrcSet = '';
@@ -108,17 +117,18 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
           <div class="image-container ${aspect}">
             <a href="/recipe/${escapeHtml(r.slug)}" class="image-link"
                aria-label="View recipe instructions for ${escapeHtml(r.title)}">
-              <img src="${escapeHtml(imgSrc)}" srcset="${escapeHtml(imgSrcSet)}" sizes="${sizes}" alt="${escapeHtml(r.title)}" width="400" height="${aspectHeight}"
+              <img src="${escapeHtml(imgSrc)}" srcset="${escapeHtml(imgSrcSet)}" sizes="${sizes}" alt="${escapeHtml(r.title)}" width="${aspectWidth}" height="${aspectHeight}"
+                   style="aspect-ratio:${aspectWidth}/${aspectHeight};width:100%;height:auto"
                    loading="lazy" decoding="async" class="card-img" />
               <div class="hover-overlay">
                 <span class="view-btn">View Recipe</span>
               </div>
             </a>
-            <span class="save-btn" data-save-btn>
+            <button type="button" class="save-btn" data-save-btn aria-label="Save Recipe">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
                 <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
               </svg>
-            </span>
+            </button>
             ${clusterBadge}${roundupBadge}
           </div>
           <div class="card-details">
@@ -131,76 +141,163 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
         </article>`;
     }
 
-    async function loadRemainingRecipes() {
-      loadMoreBtn!.textContent = 'Loading...';
-      try {
-        const res = await fetch('/recipes-index.json');
-        const allRecipes = await res.json();
-        
-        // Get already rendered IDs to filter out duplicates
-        const renderedIds = new Set(
-          Array.from(feed!.querySelectorAll('[data-recipe-id]'))
-            .map(el => el.getAttribute('data-recipe-id'))
-        );
-
-        // Determine if we are filtering by a specific cluster (hub page context)
-        let filterClusterSlug: string | null = null;
-        const pathParts = window.location.pathname.split('/');
-        const hubIndex = pathParts.indexOf('hub');
-        if (hubIndex !== -1 && pathParts[hubIndex + 1]) {
-          filterClusterSlug = pathParts[hubIndex + 1];
-        }
-
-        remainingRecipes = allRecipes.filter((r: import("../lib/types").Recipe) => {
-          if (renderedIds.has(r.id || '')) return false;
-          if (filterClusterSlug && r.parentClusterSlug !== filterClusterSlug) return false;
-          return true;
-        });
-
-        isLoaded = true;
-        loadMoreBtn!.textContent = 'Discover More Recipes';
-      } catch (err) {
-        console.error('Failed to load remaining recipes:', err);
-        loadMoreBtn!.textContent = 'Failed to load. Click to retry';
-      }
+    function finishFeed() {
+      if (observer) observer.disconnect();
+      if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+      if (status) status.textContent = 'All recipes loaded.';
     }
 
-    loadMoreBtn.addEventListener('click', async () => {
-      if (!isLoaded) {
-        await loadRemainingRecipes();
-        if (!isLoaded) return; // Loading failed
+    function ensureLoaded(): Promise<void> {
+      if (isLoaded) return Promise.resolve();
+      if (loadingPromise) return loadingPromise;
+
+      loadingPromise = (async () => {
+        loadMoreBtn!.textContent = 'Loading...';
+        loadMoreBtn!.disabled = true;
+        if (status) status.textContent = 'Loading more recipes.';
+
+        try {
+          if (recipesCache === null) {
+            const res = await fetch('/recipes-index.json');
+            if (!res.ok) {
+              throw new Error(`Recipe index request failed: ${res.status}`);
+            }
+            recipesCache = await res.json();
+            if (!Array.isArray(recipesCache)) throw new Error('Invalid recipes index');
+          }
+
+          const renderedIds = new Set(
+            Array.from(feed!.querySelectorAll('[data-recipe-id]'))
+              .map((el) => el.getAttribute('data-recipe-id'))
+          );
+
+          const pathParts = window.location.pathname.split('/');
+          const hubIndex = pathParts.indexOf('hub');
+          let filterClusterSlug: string | null = null;
+          if (hubIndex !== -1 && pathParts[hubIndex + 1]) {
+            filterClusterSlug = pathParts[hubIndex + 1];
+          }
+
+          remainingRecipes = (recipesCache || []).filter((r: import("../lib/types").Recipe) => {
+            if (renderedIds.has(r.id || '')) return false;
+            if (filterClusterSlug && r.parentClusterSlug !== filterClusterSlug) return false;
+            return true;
+          });
+
+          isLoaded = true;
+
+          if (remainingRecipes.length === 0) {
+            finishFeed();
+            return;
+          }
+
+          loadMoreBtn!.textContent = 'Discover More Recipes';
+        } catch (err) {
+          console.error('Failed to load remaining recipes:', err);
+          loadMoreBtn!.textContent = 'Failed to load. Click to retry';
+          loadMoreBtn!.style.display = '';
+          if (status) {
+            status.textContent = 'Failed to load more recipes. Use Discover More Recipes to retry.';
+          }
+        } finally {
+          loadingPromise = null;
+          loadMoreBtn!.disabled = false;
+        }
+      })();
+
+      return loadingPromise;
+    }
+
+    function appendBatch(): boolean {
+      if (isAppending) return false;
+
+      if (currentIndex >= remainingRecipes.length) {
+        finishFeed();
+        return false;
       }
 
       const batch = remainingRecipes.slice(currentIndex, currentIndex + step);
+
+      // Reserve the index BEFORE requestAnimationFrame so another observer
+      // callback cannot schedule the identical records.
+      currentIndex += batch.length;
+      isAppending = true;
+
       let savedList: string[] = [];
-      try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
+      try {
+        savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]');
+      } catch {}
 
-      batch.forEach(r => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'masonry-item';
-        wrapper.setAttribute('data-feed-item', '');
-        wrapper.innerHTML = buildCardHTML(r);
+      const doAppend = () => {
+        try {
+          batch.forEach(r => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'masonry-item';
+            wrapper.setAttribute('data-feed-item', '');
+            wrapper.innerHTML = buildCardHTML(r);
 
-        // Sync saved state on newly generated card
-        if (savedList.includes(r.id || '')) {
-          const saveBtn = wrapper.querySelector('[data-save-btn]');
-          if (saveBtn) {
-            saveBtn.classList.add('saved');
+            // Sync saved state on newly generated card
+            if (savedList.includes(r.id || '')) {
+              const saveBtn = wrapper.querySelector('[data-save-btn]');
+              if (saveBtn) {
+                saveBtn.classList.add('saved');
+              }
+            }
+
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!reduceMotion) {
+              wrapper.animate(
+                [{ opacity: 0, transform: 'translateY(15px)' }, { opacity: 1, transform: 'translateY(0)' }],
+                { duration: 350, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' }
+              );
+            }
+            feed!.appendChild(wrapper);
+          });
+
+          if (currentIndex >= remainingRecipes.length) {
+            finishFeed();
           }
+        } finally {
+          isAppending = false;
         }
+      };
 
-        wrapper.animate(
-          [{ opacity: 0, transform: 'translateY(15px)' }, { opacity: 1, transform: 'translateY(0)' }],
-          { duration: 350, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', fill: 'forwards' }
-        );
-        feed.appendChild(wrapper);
-      });
-      currentIndex += step;
-      if (currentIndex >= remainingRecipes.length) {
-        loadMoreContainer!.style.display = 'none';
+      if (batch.length > 4 && 'requestAnimationFrame' in window) {
+        requestAnimationFrame(doAppend);
+      } else {
+        doAppend();
       }
+
+      return true;
+    }
+
+    async function loadNextBatch() {
+      await ensureLoaded();
+      if (isLoaded) {
+        const appended = appendBatch();
+        if (appended && observer && loadMoreBtn && loadMoreBtn.style.display !== 'none') {
+           loadMoreBtn.style.display = 'none'; // hide button visually when IO is active and successful
+        }
+      }
+    }
+
+    let observer: IntersectionObserver | null = null;
+    if ('IntersectionObserver' in window && sentinel) {
+      observer = new IntersectionObserver(
+        async (entries) => {
+          if (!entries[0]?.isIntersecting) return;
+          loadNextBatch();
+        },
+        { root: null, rootMargin: '400px 0px', threshold: 0 }
+      );
+      observer.observe(sentinel);
+    }
+
+    loadMoreBtn.addEventListener('click', () => {
+      loadNextBatch();
     });
   }
+
 </script>
 
 <style>
@@ -250,11 +347,26 @@ const { recipes = [], initialCount = 12, prioritizeFirst = true } = Astro.props;
     .masonry-grid {
       column-count: 3;
     }
+    @supports (grid-template-rows: masonry) {
+      .masonry-grid {
+        display: grid;
+        column-count: auto;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: masonry;
+        gap: 1.25rem;
+      }
+      .masonry-item { margin-bottom: 0; }
+    }
   }
 
   @media (min-width: 1280px) {
     .masonry-grid {
       column-count: 4;
+    }
+    @supports (grid-template-rows: masonry) {
+      .masonry-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
     }
   }
 
