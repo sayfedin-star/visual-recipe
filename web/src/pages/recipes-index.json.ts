@@ -24,6 +24,7 @@ export const GET: APIRoute = async () => {
       imageUrl: urlFor(recipe.mainImage)
         .width(400)
         .height(recipe.cardAspectRatio === 'standard' ? 300 : recipe.cardAspectRatio === 'super-tall' ? 800 : 600)
+        .fit('crop')
         .auto('format')
         .quality(65)
         .url(),

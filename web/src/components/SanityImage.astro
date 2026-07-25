@@ -25,7 +25,7 @@ const IMAGE_QUALITY = 65;
 
 // Differentiate between LCP hero and non-critical images for widths
 const isHero = fetchpriority === 'high';
-const widths = customWidths || (isHero ? [360, 540, 720, 750, 900, 1080] : [200, 400, 600]);
+const widths = customWidths || (isHero ? [360, 540, 750, 900] : [200, 400, 600]);
 
 // Determine display width & height dynamically to avoid oversized fallback src
 const displayWidth = width || (isHero ? 800 : 400);
