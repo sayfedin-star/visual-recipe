@@ -43,7 +43,8 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
     <!-- Fonts - Reduced to only weights actually used in the design system -->
     <link rel="preconnect" href="https://cdn.sanity.io" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.sanity.io">
-    <slot name="head" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Outfit:wght@600;700;800&display=swap">
@@ -64,7 +65,7 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
 
     <!-- LocalStorage Save Recipes Synchronization Script -->
     <script>
-      function initSavedRecipes() {
+      function syncSavedClasses() {
         let savedList: string[] = [];
         try { savedList = JSON.parse(localStorage.getItem('saved-recipes') || '[]'); } catch {}
         document.querySelectorAll('[data-recipe-id]').forEach((card) => {
@@ -76,6 +77,10 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
             }
           }
         });
+      }
+
+      function bindSaveClicks() {
+        if ((window as any).__saveClickListenerRegistered) return;
 
         // Event delegation for save buttons
         document.addEventListener('click', (e) => {
@@ -107,13 +112,18 @@ const shareImage = image || new URL('/favicon.svg', Astro.site).toString();
             }
           }
         });
+
+        (window as any).__saveClickListenerRegistered = true;
       }
 
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(initSavedRecipes);
-      } else {
-        setTimeout(initSavedRecipes, 100);
-      }
+      document.addEventListener('astro:page-load', () => {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(syncSavedClasses);
+        } else {
+          setTimeout(syncSavedClasses, 100);
+        }
+        bindSaveClicks();
+      });
     </script>
   </body>
 </html>
